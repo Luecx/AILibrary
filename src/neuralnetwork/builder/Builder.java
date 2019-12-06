@@ -3,9 +3,13 @@ package neuralnetwork.builder;
 import core.tensor.Tensor;
 import core.tensor.Tensor3D;
 import neuralnetwork.data.TrainSet;
+import neuralnetwork.functions.None;
+import neuralnetwork.functions.ReLU;
+import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.network.*;
 import neuralnetwork.network.special.GramNode;
 import neuralnetwork.nodes.Node;
+import sun.nio.ch.Net;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,9 +24,12 @@ public class Builder {
     ArrayList<InputNode> inputs = new ArrayList<>();
     ArrayList<OutputNode> outputs = new ArrayList<>();
 
+    private Node lastAddedNode = null;
+
     public Builder(int d, int w, int h) {
         InputNode in = new InputNode(d, w, h);
         this.addNode("input_node_1", in);
+        this.lastAddedNode = in;
     }
 
     public Builder() {
@@ -38,7 +45,6 @@ public class Builder {
                 order.toArray(new Node[0]),
                 inputs.toArray(new InputNode[0]),
                 outputs.toArray(new OutputNode[0]));
-
         return k;
     }
 
@@ -50,10 +56,8 @@ public class Builder {
 
     public void finish_layers() {
         int output_index = 1;
-
         Set<String> identifier = nodes.keySet();
         ArrayList<Node> nodes_to_add = new ArrayList<>();
-
         try {
             for (Node n : order) {
                 if (!n.hasPreviousNode() && !(n instanceof InputNode)) {
@@ -67,12 +71,9 @@ public class Builder {
                         name = "output_layer_" + output_index;
                     }
                     output_index++;
-
                     node.setIdentifier(name);
                     node.addPreviousNode(n);
-
                     nodes_to_add.add(node);
-
                     outputs.add(node);
                     nodes.put(name, node);
                 }
@@ -111,11 +112,17 @@ public class Builder {
             }
             if (n instanceof InputNode) {
                 inputs.add((InputNode) n);
-            } else if (n instanceof OutputNode) {
-                outputs.add((OutputNode) n);
+            } else {
+                if(lastAddedNode != null){
+                    n.addPreviousNode(lastAddedNode);
+                }
+                if (n instanceof OutputNode) {
+                    outputs.add((OutputNode) n);
+                }
             }
             nodes.put(n.getIdentifier(), n);
             order.add(n);
+            lastAddedNode = n;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -128,7 +135,6 @@ public class Builder {
         for (Node l : order) {
             String prev = "[";
             String next = "[";
-
             if (l.hasPreviousNode()) {
                 for (Node n : l.getPreviousNodes()) {
                     prev += n.getIdentifier() + " ";
@@ -137,7 +143,6 @@ public class Builder {
             } else {
                 prev += " - ]";
             }
-
             if (l.hasNextNode()) {
                 for (Node n : l.getNextNodes()) {
                     next += n.getIdentifier() + " ";
@@ -146,7 +151,6 @@ public class Builder {
             } else {
                 next += " - ]";
             }
-
             System.out.format("%-30s %-20s %-40s %-50s \n",
                     l.getClass().getSimpleName() + "[" + l.getIdentifier() + "]",
                     "[" + l.getOutputDepth() + " " + l.getOutputWidth() + " " + l.getOutputHeight() + "]",
@@ -160,54 +164,37 @@ public class Builder {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        Builder builder = new Builder();
+        InputNode inputNode;
+        ConvolutionNode deconvNode;
+        builder.addNode("input", inputNode = new InputNode(1, 2, 2));
+        builder.addNode("deconv3", deconvNode = new ConvolutionNode(1, 2, 1, 0));
+        Network network = builder.build_network();
+        network.print_overview();
+        //network.print_timecheck();
 
-//        Builder builder = new Builder();
-//        InputNode inputNode = new InputNode(1,28,28);
-//
-//        builder.addNode("input_node_1", inputNode);
-//        builder.addNode("conv_1_1", new ConvolutionNode(4, 5, 1, 2), "input_node_1");
-//        builder.addNode("conv_1_2", new ConvolutionNode(4, 3, 1, 1), "conv_1_1");
-//        builder.addNode("conv_1_3", new ConvolutionNode(4, 3, 1, 1), "conv_1_2");
-//        builder.addNode("flatten", new FlattenNode(), "conv_1_3");
-//        builder.addNode("dense_1", new DenseNode(10), "flatten");
-//        builder.addNode("output_content", new OutputNode(),"dense_1");
-//
-//        Network net = builder.build_network();
-        TrainSet set = TrainSet.fromMnist("res/train-images.idx3-ubyte", "res/train-labels.idx1-ubyte", 100,5000);
-//
-//
-//        for(int n = 0; n < 100; n++){
-//            double e = 0;
-//            for(int i = 0; i < set.size(); i++){
-//                e += net.train(set.getInput(i), set.getOutput(i),0.001);
-//            }
-//            System.out.println(e / set.size());
-//        }
-//        net.write("res/mnist_conv_small.net");
+        Tensor3D in = new Tensor3D(1,2,2);
+        in.randomizeRegular(1,1);
+        Tensor3D out = new Tensor3D(1,1,1);
+        out.reset(2);
 
-        Network net = Network.load("res/mnist_conv_small.net");
+        deconvNode.getFilter().set(Math.random(),0,0,0,0);
+        deconvNode.getFilter().set(Math.random(),0,0,1,0);
+        deconvNode.getFilter().set(Math.random(),0,0,0,1);
+        deconvNode.getFilter().set(Math.random(),0,0,1,1);
+        deconvNode.setActivationFunction(new ReLU());
 
-        double hits = 0;
-        for(int i = 0; i < set.size(); i++){
-            Tensor3D out = net.calculate(set.getInput(i))[0];
-            double trueIndex = 0;
-            double index = 0;
-            double val = 0;
-            for(int x = 0; x < 10; x++){
-                if(out.get(0,0,x) > val){
-                    val = out.get(0,0,x);
-                    index = x;
-                }
-                if(set.getOutput(i).get(0,0,x) > 0.5){
-                    trueIndex = x;
-                }
-            }
-            if(trueIndex == index){
-                hits++;
-            }
-            System.out.println(100 * hits / (i+1) + "%");
+        System.out.println(network.calculate(in)[0]);
+
+        System.out.println(deconvNode.getFilter());
+
+        for(int i = 0; i < 200; i++){
+            System.out.println(network.train(in,out,0.03));
         }
 
+        System.out.println(deconvNode.getFilter());
 
+//        network.write("test.net");
+//        System.out.println(Network.load("test.net").calculate(in)[0]);
     }
 }

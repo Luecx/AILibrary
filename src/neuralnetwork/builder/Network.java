@@ -59,6 +59,7 @@ public class Network {
 
     private void feed(Tensor3D... input) {
         for (int i = 0; i < input_nodes.length; i++) {
+            if(input[i].size() != input_nodes[i].getOutputSize()) throw new RuntimeException();
             input_nodes[i].setOutputValue(input[i]);
         }
         for (Node i : calculation_order) {
@@ -203,13 +204,19 @@ public class Network {
             }
             int params = 0;
             int connections = 0;
-            String func = "linear";
+            String func = "None";
             if (l instanceof ConvolutionNode) {
                 params += ((ConvolutionNode) l).getFilter_size() * ((ConvolutionNode) l).getFilter_size() * l.getInputDepth() *
                         l.getOutputDepth();
                 connections += l.getOutputDepth() * l.getOutputHeight() * l.getOutputWidth() * l.getInputDepth() *
                         ((ConvolutionNode) l).getFilter_size() * ((ConvolutionNode) l).getFilter_size();
                 func = ((ConvolutionNode) l).getActivation_function().getClass().getSimpleName();
+            } else if (l instanceof DeconvNode) {
+                params += ((DeconvNode) l).getFilter_size() * ((DeconvNode) l).getFilter_size() * l.getInputDepth() *
+                        l.getOutputDepth();
+                connections += l.getInputDepth() * l.getInputHeight() * l.getInputWidth() * l.getOutputDepth() *
+                        ((DeconvNode) l).getFilter_size() * ((DeconvNode) l).getFilter_size();
+                func = ((DeconvNode) l).getActivation_function().getClass().getSimpleName();
             } else if (l instanceof DenseNode) {
                 params += l.getOutputSize() * l.getInputSize();
                 connections += l.getOutputSize() * l.getInputSize();
@@ -291,6 +298,7 @@ public class Network {
     public static Node parsing_generateNode(parser.tree.Node node) {
         String name = node.getName();
         Node result = null;
+        System.out.println(name);
         switch (name) {
             case "InputNode":
                 result = new InputNode(
@@ -315,6 +323,22 @@ public class Network {
                         break;
                 }
                 break;
+            case "DeconvNode":
+                result = new DeconvNode(
+                        Integer.parseInt(node.getAttribute("channel_amount").getValue()),
+                        Integer.parseInt(node.getAttribute("filter_size").getValue()),
+                        Integer.parseInt(node.getAttribute("filter_stride").getValue()),
+                        Integer.parseInt(node.getAttribute("padding").getValue())
+                );
+                switch (node.getAttribute("activation_function").getValue()) {
+                    case "ReLU":
+                        ((DeconvNode) result).setActivationFunction(new ReLU());
+                        break;
+                    case "Sigmoid":
+                        ((DeconvNode) result).setActivationFunction(new Sigmoid());
+                        break;
+                }
+                break;
             case "OutputNode":
                 result = new OutputNode();
                 break;
@@ -334,6 +358,13 @@ public class Network {
             case "FlattenNode":
                 result = new FlattenNode();
                 break;
+            case "ShapeNode":
+                result = new ShapeNode(
+                        Integer.parseInt(node.getAttribute("depth").getValue()),
+                        Integer.parseInt(node.getAttribute("width").getValue()),
+                        Integer.parseInt(node.getAttribute("height").getValue())
+                );
+                break;
             case "PoolingNode":
                 result = new PoolingNode(
                         Integer.parseInt(node.getAttribute("pooling_factor").getValue())
@@ -349,7 +380,6 @@ public class Network {
         result.setIdentifier(node.getAttribute("identity").getValue());
         return result;
     }
-
 
     public static Network load(String file) {
         try {
@@ -371,11 +401,16 @@ public class Network {
             Network result = builder.build_network();
 
             for(Node n:result.calculation_order){
-                if(n instanceof ConvolutionNode){
+                if(n instanceof ConvolutionNode) {
                     ((ConvolutionNode) n).getFilter().setData(
                             ParserTools.parseDoubleArray(map.get(n.getIdentifier()).getAttribute("filter").getValue()));
                     ((ConvolutionNode) n).getBias().setData(
                             ParserTools.parseDoubleArray(map.get(n.getIdentifier()).getAttribute("bias").getValue()));
+                }else if(n instanceof DeconvNode){
+                        ((DeconvNode) n).getFilter().setData(
+                                ParserTools.parseDoubleArray(map.get(n.getIdentifier()).getAttribute("filter").getValue()));
+                        //((DeconvNode) n).getBias().setData(
+                        //        ParserTools.parseDoubleArray(map.get(n.getIdentifier()).getAttribute("bias").getValue()));
                 }else if(n instanceof DenseNode){
                     ((DenseNode) n).getWeights().setData(
                             ParserTools.parseDoubleArray(map.get(n.getIdentifier()).getAttribute("weights").getValue()));
@@ -424,6 +459,15 @@ public class Network {
                         result.addAttribute("filter", Arrays.toString(((ConvolutionNode) node).getFilter().getData()));
                         result.addAttribute("bias", Arrays.toString(((ConvolutionNode) node).getBias().getData()));
                         break;
+                    case "DeconvNode":
+                        result.addAttribute("channel_amount", "" + ((DeconvNode) node).getChannel_amount());
+                        result.addAttribute("filter_size", "" + ((DeconvNode) node).getFilter_size());
+                        result.addAttribute("filter_stride", "" + ((DeconvNode) node).getFilter_Stride());
+                        result.addAttribute("padding", "" + ((DeconvNode) node).getPadding());
+                        result.addAttribute("activation_function", ((DeconvNode) node).getActivation_function().getClass().getSimpleName());
+                        result.addAttribute("filter", Arrays.toString(((DeconvNode) node).getFilter().getData()));
+                        //result.addAttribute("bias", Arrays.toString(((DeconvNode) node).getBias().getData()));
+                        break;
                     case "DenseNode":
                         result.addAttribute("height", "" + ((DenseNode) node).getOutputHeight());
                         result.addAttribute("activation_function", ((DenseNode) node).getActivation_function().getClass().getSimpleName());
@@ -432,6 +476,12 @@ public class Network {
                         break;
                     case "PoolingNode":
                         result.addAttribute("pooling_factor", "" + ((PoolingNode) node).getPooling_factor());
+                        break;
+                    case "ShapeNode":
+                        result.addAttribute("depth", "" + node.getOutputDepth());
+                        result.addAttribute("width", "" + node.getOutputWidth());
+                        result.addAttribute("height", "" + node.getOutputHeight());
+
                         break;
                 }
                 root.addChild(result);
