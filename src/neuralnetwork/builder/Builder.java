@@ -164,37 +164,42 @@ public class Builder {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Builder builder = new Builder();
-        InputNode inputNode;
-        ConvolutionNode deconvNode;
-        builder.addNode("input", inputNode = new InputNode(1, 2, 2));
-        builder.addNode("deconv3", deconvNode = new ConvolutionNode(1, 2, 1, 0));
-        Network network = builder.build_network();
-        network.print_overview();
-        //network.print_timecheck();
+        Tensor3D in1 = new Tensor3D(1,1,3);
+        in1.set(1,0,0,0);
+        in1.set(6,0,0,1);
+        in1.set(3,0,0,2);
 
-        Tensor3D in = new Tensor3D(1,2,2);
-        in.randomizeRegular(1,1);
-        Tensor3D out = new Tensor3D(1,1,1);
-        out.reset(2);
+        Tensor3D out1 = new Tensor3D(1,1,2);
+        out1.set(2,0,0,0);
+        out1.set(4,0,0,1);
 
-        deconvNode.getFilter().set(Math.random(),0,0,0,0);
-        deconvNode.getFilter().set(Math.random(),0,0,1,0);
-        deconvNode.getFilter().set(Math.random(),0,0,0,1);
-        deconvNode.getFilter().set(Math.random(),0,0,1,1);
-        deconvNode.setActivationFunction(new ReLU());
+        Tensor3D in2 = new Tensor3D(1,1,3);
+        in2.set(3,0,0,0);
+        in2.set(1,0,0,1);
+        in2.set(2,0,0,2);
 
-        System.out.println(network.calculate(in)[0]);
+        Tensor3D out2 = new Tensor3D(1,1,2);
+        out2.set(5,0,0,0);
+        out2.set(1,0,0,1);
 
-        System.out.println(deconvNode.getFilter());
+        Builder b = new Builder(1,1,3);
+        b.addNode("layer1", new DenseNode(3));
+        b.addNode("layer2", new DenseNode(4));
+        b.addNode("layer3", new DenseNode(2));
 
-        for(int i = 0; i < 200; i++){
-            System.out.println(network.train(in,out,0.03));
+        Network net = b.build_network();
+        net.print_overview();
+
+
+        System.out.println(net.calculate(in1)[0]);
+        System.out.println(net.calculate(in2)[0]);
+
+
+        for (int i=0; i<100000; i++){
+            net.train(in1, out1, 0.01);
+            net.train(in2, out2, 0.01);
+            System.out.println(net.calculate(in1)[0]);
+            System.out.println(net.calculate(in2)[0]);
         }
-
-        System.out.println(deconvNode.getFilter());
-
-//        network.write("test.net");
-//        System.out.println(Network.load("test.net").calculate(in)[0]);
     }
 }

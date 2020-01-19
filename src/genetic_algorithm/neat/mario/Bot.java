@@ -1,7 +1,7 @@
-package luecx.ai.genetic_algorithm.neat.mario;
+package genetic_algorithm.neat.mario;
 
 
-import luecx.ai.genetic_algorithm.neat.neat.Client;
+import genetic_algorithm.neat.neat.Client;
 
 public class Bot extends Mario {
 

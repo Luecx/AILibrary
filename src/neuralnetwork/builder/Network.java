@@ -258,20 +258,64 @@ public class Network {
         }
         System.out.println("########################################################" +
                 "#########################################################");
-        long k = 0;
-        long d;
+        long k = System.nanoTime();
         long t;
+        long[] timingsForward = new long[this.calculation_order.length];
+        long[] timingsBackward = new long[this.calculation_order.length];
+        long[] timingsWeights = new long[this.calculation_order.length];
         for (int i = 0; i < amount; i++) {
-            t = System.nanoTime();
-            train(in, out, 0);
-            d = System.nanoTime() - t;
-            k += d;
-            System.out.format("%-5s %-10s ms\n", i, (d) / 10e5d);
+
+            //############################# forward #################################
+            for (int n = 0; n < input_nodes.length; n++) {
+                input_nodes[n].setOutputValue(in[n]);
+            }
+            for(int c = 0; c < calculation_order.length; c++){
+                Node n=calculation_order[c];
+                t = System.nanoTime();
+                n.abs_feedForward();
+                timingsForward[c] += System.nanoTime() - t;
+            }
+            //############################# forward #################################
+            //############################# backward ################################
+            for (int n = 0; n < output_nodes.length; n++) {
+                output_nodes[n].calculateLoss(out[n]);
+            }
+            for (int n = calculation_order.length - 1; n >= 0; n--) {
+                t = System.nanoTime();
+                calculation_order[n].abs_feedBackward();
+                timingsBackward[n] += System.nanoTime() - t;
+            }
+            //############################# backward ################################
+            //############################# weights ################################
+            for (int n = calculation_order.length - 1; n >= 0; n--) {
+                t = System.nanoTime();
+                calculation_order[n].abs_updateWeights(0);
+                timingsWeights[n] += System.nanoTime() - t;
+            }
+            //############################# weights ################################
+
+            System.out.print("\r"+(i+1) + "/" + amount);
         }
-        System.out.println("-------------------------------------------------------------" +
-                "----------------------------------------------------");
-        System.out.println("Average: " + (k) / (10e5d * amount) + " ms");
+        System.out.println();
+        System.out.println("Average: " + (System.nanoTime() - k) / (10e5d * amount) + " ms");
         System.out.println("########################################################" +
+                "#########################################################");
+
+        System.out.print("\r###########################################################" +
+                "############################################" +
+                "#########################################################");
+        for(int i = 0; i < calculation_order.length; i++){
+            System.out.format("\n%-40s forward[ms]: %-15s backward[ms]: %-15s update[ms]: %-15s \n",
+                    calculation_order[i].getClass().getSimpleName() + "[" + calculation_order[i].getIdentifier() + "]",
+                    timingsForward[i] / amount / 1E6d,
+                    timingsBackward[i] / amount / 1E6d,
+                    timingsWeights[i] / amount / 1E6d
+            );
+            System.out.print("----------------------------------------------------------------------------------------" +
+                    "------------------------------------------------------------------------");
+        }
+        System.out.println("\r###########################################################" +
+                "############################################" +
                 "#########################################################");
     }
 
@@ -298,7 +342,6 @@ public class Network {
     public static Node parsing_generateNode(parser.tree.Node node) {
         String name = node.getName();
         Node result = null;
-        System.out.println(name);
         switch (name) {
             case "InputNode":
                 result = new InputNode(
@@ -491,6 +534,10 @@ public class Network {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public Node[] getCalculation_order() {
+        return calculation_order;
     }
 
     public Network setLossFunction(int index, Error error) {

@@ -1,4 +1,4 @@
-package luecx.ai.genetic_algorithm.neat.flappy_bird;
+package genetic_algorithm.neat.flappy_bird;
 
 import java.awt.*;
 

@@ -1,8 +1,7 @@
-package luecx.ai.genetic_algorithm.neat.flappy_bird;
+package genetic_algorithm.neat.flappy_bird;
 
 
-
-import luecx.ai.genetic_algorithm.neat.neat.Neat;
+import genetic_algorithm.neat.neat.Neat;
 
 import java.awt.*;
 import java.util.ArrayList;

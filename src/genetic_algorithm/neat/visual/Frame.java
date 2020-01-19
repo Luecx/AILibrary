@@ -1,9 +1,8 @@
-package luecx.ai.genetic_algorithm.neat.visual;
+package genetic_algorithm.neat.visual;
 
 
-import luecx.ai.genetic_algorithm.neat.genes.Genome;
-import luecx.ai.genetic_algorithm.neat.neat.Client;
-import luecx.ai.genetic_algorithm.neat.neat.Neat;
+import genetic_algorithm.neat.calculations.Calculator;
+import genetic_algorithm.neat.genome.Genome;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,23 +10,23 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 
-public class NEATFrame extends JFrame {
+public class Frame extends JFrame {
 
-    private NEATPanel panel;
-    private Client genome;
+    private Panel panel;
+    private Genome genome;
 
-    public NEATFrame(Genome client) {
+    public Frame(Genome genome) {
         this();
-        this.genome = genome;
+        setGenome(genome);
         this.repaint();
     }
 
-    public void setNetwork(Client genome){
+    public void setGenome(Genome genome){
         panel.setGenome(genome);
         this.genome = genome;
     }
 
-    public NEATFrame() throws HeadlessException {
+    public Frame() throws HeadlessException {
         this.setDefaultCloseOperation(3);
 
         this.setTitle("NEAT");
@@ -37,25 +36,50 @@ public class NEATFrame extends JFrame {
         this.setLayout(new BorderLayout());
 
 
+        UIManager.LookAndFeelInfo[] looks = UIManager.getInstalledLookAndFeels();
+        try {
+            UIManager.setLookAndFeel(looks[3].getClassName());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        }
+
+
         JPanel menu = new JPanel();
         menu.setPreferredSize(new Dimension(1000,100));
-        menu.setLayout(new GridLayout(1,5));
+        menu.setLayout(new GridLayout(1,6));
 
-        JButton buttonB = new JButton("Point mutate-B");
+        JButton buttonB = new JButton("random weight");
         buttonB.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                genome.mutate_weights();
+                genome.mutate_weight_random();
                 repaint();
             }
         });
         menu.add(buttonB);
 
+        JButton buttonZ = new JButton("weight shift");
+        buttonZ.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                genome.mutate_weight_shift();
+                repaint();
+            }
+        });
+        menu.add(buttonZ);
+
         JButton buttonC = new JButton("Link mutate");
         buttonC.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                genome.mutate_connection(); repaint();
+                genome.mutate_link();
+                repaint();
             }
         });
         menu.add(buttonC);
@@ -64,16 +88,20 @@ public class NEATFrame extends JFrame {
         buttonD.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                genome.mutate_node(); repaint();
+                genome.mutate_node();
+                repaint();
             }
         });
         menu.add(buttonD);
+
+
 
         JButton buttonE = new JButton("on/off");
         buttonE.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                genome.mutate_enable_disable_connections(); repaint();
+                genome.mutate_link_toggle();
+                repaint();
             }
         });
         menu.add(buttonE);
@@ -84,7 +112,6 @@ public class NEATFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 genome.mutate();
                 repaint();
-                //System.out.println(Arrays.toString(network.calculate(1,1,1))); repaint();
             }
         });
         menu.add(buttonF);
@@ -93,10 +120,10 @@ public class NEATFrame extends JFrame {
         buttonG.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                genome.generateCalculator();
-                System.out.println(Arrays.toString(genome.calculate(1,1,1)));
-                repaint();
-                //System.out.println(Arrays.toString(network.calculate(1,1,1))); repaint();
+                System.err.println("Not yet implemented");
+//                Calculator c = new Calculator(genome);
+//                System.out.println(Arrays.toString(c.calculate(1,1,1,1,1,1,1,1,1,1)));
+//                repaint();
             }
         });
         menu.add(buttonG);
@@ -104,20 +131,10 @@ public class NEATFrame extends JFrame {
 
         this.add(menu, BorderLayout.NORTH);
 
-        this.panel = new NEATPanel();
+        this.panel = new Panel();
         this.add(panel, BorderLayout.CENTER);
 
         this.setVisible(true);
     }
 
-    public static void main(String[] args){
-
-        Neat neat = new Neat(3,3, 10);
-
-        System.out.println(neat.getClient(0).getNode_genes());
-
-        NEATFrame frame = new NEATFrame();
-        frame.setNetwork(neat.getClient(0));
-        frame.repaint();
-    }
 }

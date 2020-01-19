@@ -1,8 +1,9 @@
-package luecx.ai.genetic_algorithm.neat.flappy_bird.gui;
+package genetic_algorithm.neat.flappy_bird.gui;
 
 
 
-import luecx.ai.genetic_algorithm.neat.visual.NEATFrame;
+
+import genetic_algorithm.neat.flappy_bird.gui.GamePanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -73,7 +74,7 @@ public class Frame extends JFrame {
 
     public static void main(String[] args){
         Frame g = new Frame();
-        NEATFrame f = new NEATFrame();
-        f.setNetwork(g.gamePanel.getGame().getBirds().get(0).getClient());
+        genetic_algorithm.neat.visual.Frame f = new genetic_algorithm.neat.visual.Frame();
+        f.setGenome(g.gamePanel.getGame().getBirds().get(0).getClient().getGenome());
     }
 }

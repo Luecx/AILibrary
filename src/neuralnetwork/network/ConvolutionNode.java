@@ -68,7 +68,7 @@ public class ConvolutionNode extends Node1To1 {
         return padding;
     }
 
-    public Tensor getFilter() {
+    public Tensor4D getFilter() {
         return filter;
     }
 
@@ -99,14 +99,13 @@ public class ConvolutionNode extends Node1To1 {
         this.setOutputHeight((this.get_previous_node().getOutputHeight() + this.padding * 2 - filter_size) / filter_Stride + 1);
         double g = ((double) this.get_previous_node().getOutputWidth() + (double) this.padding * 2 - (double) filter_size) / (double) filter_Stride + 1;
         double g1 = ((double) this.get_previous_node().getOutputHeight() + (double) this.padding * 2 - (double) filter_size) / (double) filter_Stride + 1;
-
         if (g != (int) g || g1 != (int) g1)
             throw new BuildException(this, "Format does not work! Use a different padding-value!");
     }
 
     @Override
     public void abs_genArrays() {
-        if(this.filter == null){
+        if (this.filter == null) {
             filter = new Tensor4D(channel_amount, this.getInputDepth(), filter_size, filter_size);
             if (Double.isNaN(weights_min) && !Double.isNaN(weight_max)) {
                 filter.randomizeRegular(weights_min, weight_max);
@@ -116,8 +115,8 @@ public class ConvolutionNode extends Node1To1 {
                         1d / Math.sqrt(this.getInputDepth() * filter_size * filter_size));
             }
         }
-        if(this.bias == null){
-            bias = new Tensor(this.getOutputSize());
+        if (this.bias == null) {
+            bias = new Tensor(this.getChannel_amount());
             if (Double.isNaN(bias_min) && !Double.isNaN(bias_max)) {
                 bias.randomizeRegular(bias_min, bias_max);
             } else {
@@ -129,7 +128,6 @@ public class ConvolutionNode extends Node1To1 {
         if (activation_function == null) {
             activation_function = new ReLU();
         }
-
         this.x_i_range = new Tensor2D(this.getOutputWidth(), 2);
         this.y_i_range = new Tensor2D(this.getOutputHeight(), 2);
         this.filter_xy = new Tensor2D(Math.max(this.getInputWidth(), this.getInputHeight()),
@@ -240,11 +238,9 @@ public class ConvolutionNode extends Node1To1 {
             for (int output_w = 0; output_w < this.getOutputWidth(); output_w++) {
                 for (int output_h = 0; output_h < this.getOutputHeight(); output_h++) {
                     bias.getData()[output_d] -= output_loss.get(output_d, output_w, output_h) * eta;
-                    for (int j = 0; j < getInputDepth(); j++) {
-                        for (int x_i = (int) x_i_range.get(output_w, 0);
-                             x_i < x_i_range.get(output_w, 1); x_i++) {
-                            for (int y_i = (int) y_i_range.get(output_h, 0);
-                                 y_i < y_i_range.get(output_h, 1); y_i++) {
+                        for (int x_i = (int) x_i_range.get(output_w, 0); x_i < x_i_range.get(output_w, 1); x_i++) {
+                            for (int y_i = (int) y_i_range.get(output_h, 0); y_i < y_i_range.get(output_h, 1); y_i++) {
+                                for (int j = 0; j < getInputDepth(); j++) {
                                 this.filter.getData()[this.filter.index(output_d, j,
                                         (int) filter_xy.get(x_i, output_w),
                                         (int) filter_xy.get(y_i, output_h))] +=

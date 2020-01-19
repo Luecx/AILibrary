@@ -1,30 +1,44 @@
-package luecx.ai.genetic_algorithm.neat.neat;
+package genetic_algorithm.neat.neat;
 
 
-import luecx.ai.genetic_algorithm.neat.calculation.Calculator;
-import luecx.ai.genetic_algorithm.neat.genes.Genome;
-import luecx.ai.genetic_algorithm.neat.species.Specie;
+import genetic_algorithm.neat.calculations.Calculator;
+import genetic_algorithm.neat.genome.Genome;
 
-public class Client extends Genome {
-
-    private double score;
-    private Specie specie;
+public class Client {
 
     private Calculator calculator;
 
-    public Client(Neat neat) {
-        super(neat);
+    private Genome genome;
+    private double score;
+    private Species species;
+
+    public void generate_calculator(){
+        this.calculator = new Calculator(genome);
     }
 
-    public void generateCalculator(){
-        this.calculator = new Calculator(this.getNode_genes(), this.getConnection_genes());
+    public double[] calculate(double... input){
+        if(this.calculator == null) generate_calculator();
+        return this.calculator.calculate(input);
     }
 
-    public double[] calculate(double... in){
-        if(this.calculator != null){
-            return this.calculator.calculate(in);
-        }
-        return null;
+    public double distance(Client other) {
+        return this.getGenome().distance(other.getGenome());
+    }
+
+    public void mutate() {
+        getGenome().mutate();
+    }
+
+    public Calculator getCalculator() {
+        return calculator;
+    }
+
+    public Genome getGenome() {
+        return genome;
+    }
+
+    public void setGenome(Genome genome) {
+        this.genome = genome;
     }
 
     public double getScore() {
@@ -35,11 +49,11 @@ public class Client extends Genome {
         this.score = score;
     }
 
-    public Specie getSpecie() {
-        return specie;
+    public Species getSpecies() {
+        return species;
     }
 
-    public void setSpecie(Specie specie) {
-        this.specie = specie;
+    public void setSpecies(Species species) {
+        this.species = species;
     }
 }

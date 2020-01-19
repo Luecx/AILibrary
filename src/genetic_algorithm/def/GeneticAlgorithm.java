@@ -5,9 +5,8 @@ import core.tensor.Tensor;
 import neuralnetwork.network.DenseNode;
 import neuralnetwork.nodes.Node;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Random;
+import java.util.*;
+import java.util.List;
 
 public class GeneticAlgorithm {
 
@@ -15,7 +14,7 @@ public class GeneticAlgorithm {
     public double MUTATION_STENGTH = 0.1;
     public double AMOUNT_SURVIVORS = 1;
 
-    public <T extends GeneticClient> void evolve(ArrayList<T> clients) {
+    public <T extends GeneticClient> void evolve(List<T> clients) {
         clients.sort(new Comparator<GeneticClient>() {
             @Override
             public int compare(GeneticClient o1, GeneticClient o2) {
@@ -24,14 +23,16 @@ public class GeneticAlgorithm {
                 return 0;
             }
         });
-        //printClients(clients);
-        ArrayList<T> selection = selection(clients);
-        crossover(clients, selection);
+        crossover(
+                clients.subList((int)Math.min(AMOUNT_SURVIVORS, clients.size()), clients.size()),
+                clients.subList(0,(int)Math.min(AMOUNT_SURVIVORS, clients.size())));
         mutate(clients);
-        merge(clients, selection);
+
+
+
     }
 
-    public static <T extends GeneticClient> void printClients(ArrayList<T> clients) {
+    public static <T extends GeneticClient> void printClients(List<T> clients) {
         int index = 0;
         for (T t : clients) {
             index++;
@@ -39,22 +40,7 @@ public class GeneticAlgorithm {
         }
     }
 
-    protected <T extends GeneticClient> ArrayList<T> selection(ArrayList<T> clients) {
-        ArrayList<T> selection = new ArrayList<>();
-        for (int i = 0; i < Math.min(AMOUNT_SURVIVORS, clients.size()); i++) {
-            selection.add(clients.get(i));
-        }
-        for (GeneticClient g : selection) {
-            clients.remove(g);
-        }
-        return selection;
-    }
-
-    protected <T extends GeneticClient> void merge(ArrayList<T> newborns, ArrayList<T> survivors) {
-        newborns.addAll(survivors);
-    }
-
-    protected <T extends GeneticClient> void crossover(ArrayList<T> clients, ArrayList<T> selection) {
+    protected <T extends GeneticClient> void crossover(List<T> clients, List<T> selection) {
         double parentSum = 0;
         for (GeneticClient c : selection) {
             parentSum += c.getScore();
@@ -86,7 +72,7 @@ public class GeneticAlgorithm {
         }
     }
 
-    protected <T extends GeneticClient> void mutate(ArrayList<T> clients) {
+    protected <T extends GeneticClient> void mutate(List<T> clients) {
         for (GeneticClient g : clients) {
             for (Node n : g.getNetwork().getNodes()) {
                 if (n instanceof DenseNode) {

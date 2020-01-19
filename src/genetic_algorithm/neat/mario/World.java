@@ -1,7 +1,8 @@
-package luecx.ai.genetic_algorithm.neat.mario;
+package genetic_algorithm.neat.mario;
 
 
-import luecx.ai.genetic_algorithm.neat.neat.Neat;
+
+import genetic_algorithm.neat.neat.Neat;
 
 import java.util.ArrayList;
 import java.util.Comparator;

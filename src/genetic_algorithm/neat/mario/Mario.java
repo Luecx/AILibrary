@@ -1,4 +1,4 @@
-package luecx.ai.genetic_algorithm.neat.mario;
+package genetic_algorithm.neat.mario;
 
 
 public abstract class Mario {
