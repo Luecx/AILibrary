@@ -2,6 +2,7 @@ package neuralnetwork.builder;
 
 import core.tensor.Tensor;
 import core.tensor.Tensor3D;
+import neuralnetwork.data.Measure;
 import neuralnetwork.data.TrainSet;
 import neuralnetwork.functions.None;
 import neuralnetwork.functions.ReLU;
@@ -85,13 +86,10 @@ public class Builder {
     }
 
     public void addNode(Node n, String... arguments) {
-        try {
-            if (n.getIdentifier() == null) {
-                throw new ArgumentException("Layer has no identifier");
-            }
+        if (n.getIdentifier() == null) {
+            addNode(n.getClass().getSimpleName()+"_"+nodes.size(), n, arguments);
+        } else {
             addNode(n.getIdentifier(), n, arguments);
-        } catch (ArgumentException e) {
-            e.printStackTrace();
         }
     }
 
@@ -164,42 +162,17 @@ public class Builder {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Tensor3D in1 = new Tensor3D(1,1,3);
-        in1.set(1,0,0,0);
-        in1.set(6,0,0,1);
-        in1.set(3,0,0,2);
+        TrainSet trainSet = TrainSet.fromMnist("res/train-images.idx3-ubyte", "res/train-labels.idx1-ubyte", 0,100);
 
-        Tensor3D out1 = new Tensor3D(1,1,2);
-        out1.set(2,0,0,0);
-        out1.set(4,0,0,1);
+        Builder builder = new Builder(1,28,28);
+        builder.addNode(new FlattenNode());
+        builder.addNode(new DenseNode(50).setActivationFunction(new Sigmoid()));
+        builder.addNode(new DenseNode(10).setActivationFunction(new Sigmoid()));
+        builder.addNode(new OutputNode());
 
-        Tensor3D in2 = new Tensor3D(1,1,3);
-        in2.set(3,0,0,0);
-        in2.set(1,0,0,1);
-        in2.set(2,0,0,2);
+        Network network = builder.build_network();
+        network.train(trainSet, 100, 0.03);
 
-        Tensor3D out2 = new Tensor3D(1,1,2);
-        out2.set(5,0,0,0);
-        out2.set(1,0,0,1);
-
-        Builder b = new Builder(1,1,3);
-        b.addNode("layer1", new DenseNode(3));
-        b.addNode("layer2", new DenseNode(4));
-        b.addNode("layer3", new DenseNode(2));
-
-        Network net = b.build_network();
-        net.print_overview();
-
-
-        System.out.println(net.calculate(in1)[0]);
-        System.out.println(net.calculate(in2)[0]);
-
-
-        for (int i=0; i<100000; i++){
-            net.train(in1, out1, 0.01);
-            net.train(in2, out2, 0.01);
-            System.out.println(net.calculate(in1)[0]);
-            System.out.println(net.calculate(in2)[0]);
-        }
+        System.out.println("accuracy: " + Measure.classificationAccuracy(network, trainSet));
     }
 }

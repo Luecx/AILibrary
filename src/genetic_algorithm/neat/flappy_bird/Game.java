@@ -104,13 +104,10 @@ public class Game {
         distance_travelled += pipe_speed * time;
 
         if(birds_alive <= 0){
-            double max = Collections.max(birds, new Comparator<Bird>() {
-                @Override
-                public int compare(Bird o1, Bird o2) {
-                    if(o1.getScore() > o2.getScore()) return 1;
-                    if(o2.getScore() > o1.getScore()) return -1;
-                    return 0;
-                }
+            double max = Collections.max(birds, (o1, o2) -> {
+                if(o1.getScore() > o2.getScore()) return 1;
+                if(o2.getScore() > o1.getScore()) return -1;
+                return 0;
             }).getScore();
             System.out.println("max: " + max);
             algorithm.evolve();

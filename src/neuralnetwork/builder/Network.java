@@ -2,6 +2,7 @@ package neuralnetwork.builder;
 
 import core.tensor.Tensor;
 import core.tensor.Tensor3D;
+import neuralnetwork.data.TrainSet;
 import neuralnetwork.functions.ReLU;
 import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.loss.Error;
@@ -125,6 +126,19 @@ public class Network {
         double e = backpropagateError(out);
         updateWeights(eta);
         return e;
+    }
+
+    public double train(TrainSet trainSet, int epochs, double eta){
+        double E = 0;
+        for(int i = 0; i < epochs; i++){
+            E = 0;
+            System.out.format("epoch: %-10s", (i+1));
+            for(int k = 0; k < trainSet.size(); k++){
+                E+=this.train(trainSet.getInput(k), trainSet.getOutput(k), eta);
+            }
+            System.out.format("loss: %-10s %n",E/trainSet.size());
+        }
+        return E;
     }
 
     public void print_inputLoss() {

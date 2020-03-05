@@ -248,8 +248,9 @@ public class TrainSet {
         TrainSet set = new TrainSet(1, 28, 28, 1, 1, 10);
 
         try {
-            MnistImageFile m = new MnistImageFile(images, "rw");
-            MnistLabelFile l = new MnistLabelFile(labels, "rw");
+
+            MnistImageFile m = new MnistImageFile(images, "r");
+            MnistLabelFile l = new MnistLabelFile(labels, "r");
 
             for(int i = 0; i < start; i++){
                 m.next();
