@@ -2,6 +2,7 @@ package genetic_algorithm.def;
 
 
 import core.tensor.Tensor;
+import genetic_algorithm.def.GeneticClient;
 import neuralnetwork.network.DenseNode;
 import neuralnetwork.nodes.Node;
 

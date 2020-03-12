@@ -8,6 +8,8 @@ import neuralnetwork.functions.Function;
 import neuralnetwork.functions.ReLU;
 import neuralnetwork.nodes.Node1To1;
 
+import java.util.Arrays;
+
 public class ConvolutionNode extends Node1To1 {
 
     private int channel_amount;
@@ -107,7 +109,7 @@ public class ConvolutionNode extends Node1To1 {
     public void abs_genArrays() {
         if (this.filter == null) {
             filter = new Tensor4D(channel_amount, this.getInputDepth(), filter_size, filter_size);
-            if (Double.isNaN(weights_min) && !Double.isNaN(weight_max)) {
+            if (!Double.isNaN(weights_min) && !Double.isNaN(weight_max)) {
                 filter.randomizeRegular(weights_min, weight_max);
             } else {
                 filter.randomizeRegular(
@@ -117,7 +119,7 @@ public class ConvolutionNode extends Node1To1 {
         }
         if (this.bias == null) {
             bias = new Tensor(this.getChannel_amount());
-            if (Double.isNaN(bias_min) && !Double.isNaN(bias_max)) {
+            if (!Double.isNaN(bias_min) && !Double.isNaN(bias_max)) {
                 bias.randomizeRegular(bias_min, bias_max);
             } else {
                 filter.randomizeRegular(
@@ -175,6 +177,15 @@ public class ConvolutionNode extends Node1To1 {
 //            }
             for (int x_i = (int) x_i_range.get(x, 0); x_i < x_i_range.get(x, 1); x_i++) {
                 for (int y_i = (int) y_i_range.get(y, 0); y_i < y_i_range.get(y, 1); y_i++) {
+//                    System.out.println(x_i + "  " + y_i + "  " +
+//                            filter_xy.get(x_i, x) + "  " + filter_xy.get(y_i, y) + "  " +
+//                            this.filter.get(
+//                                    actIndex,
+//                                    j,
+//                                    (int) filter_xy.get(x_i, x),
+//                                    (int) filter_xy.get(y_i, y))
+//                    );
+//                    System.out.println(getInputValue().get(j,x_i, y_i));
                     total += this.filter.get(
                             actIndex,
                             j,

@@ -2,7 +2,6 @@ package neuralnetwork.data;
 
 import core.tensor.Tensor3D;
 import neuralnetwork.builder.Network;
-import sun.nio.ch.Net;
 
 public class Measure {
 

@@ -7,7 +7,6 @@ import neuralnetwork.builder.BuildException;
 import neuralnetwork.functions.ReLU;
 import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.network.*;
-import parser.parser.ParserTools;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +31,6 @@ public abstract class Node {
     protected Tensor3D input_loss;  //only needed for splitting
     protected Tensor3D input_value;  //only needed for splitting
     protected Tensor3D input_derivative;  //only needed for splitting
-
 
     private boolean max_prev_nodes = false;
     private boolean max_next_nodes = false;
@@ -211,6 +209,12 @@ public abstract class Node {
         }
 
     }
+    public void setOutputDerivative(Tensor3D output_derivative) {
+        this.output_derivative = output_derivative;
+    }
+    public void setOutputLoss(Tensor3D output_loss) {
+        this.output_loss = output_loss;
+    }
 
     public boolean hasMaxPrevNodes() {
         return max_prev_nodes;
@@ -227,7 +231,9 @@ public abstract class Node {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
-        return output_depth == node.output_depth &&
+        return
+                identifier.equals(node.identifier) &&
+                output_depth == node.output_depth &&
                 output_width == node.output_width &&
                 output_height == node.output_height &&
                 input_depth == node.input_depth &&

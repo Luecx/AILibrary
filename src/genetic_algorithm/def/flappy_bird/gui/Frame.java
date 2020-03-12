@@ -1,4 +1,4 @@
-package luecx.ai.genetic_algorithm.def.flappy_bird.gui;
+package genetic_algorithm.def.flappy_bird.gui;
 
 import javax.swing.*;
 import java.awt.*;

@@ -3,6 +3,8 @@ package neuralnetwork.builder;
 import core.tensor.Tensor;
 import core.tensor.Tensor3D;
 import neuralnetwork.data.TrainSet;
+import neuralnetwork.functions.LeakyReLU;
+import neuralnetwork.functions.None;
 import neuralnetwork.functions.ReLU;
 import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.loss.Error;
@@ -11,7 +13,6 @@ import neuralnetwork.nodes.Node;
 import parser.parser.Parser;
 import parser.parser.ParserTools;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -58,7 +59,7 @@ public class Network {
         return getOutput();
     }
 
-    private void feed(Tensor3D... input) {
+    public void feed(Tensor3D... input) {
         for (int i = 0; i < input_nodes.length; i++) {
             if(input[i].size() != input_nodes[i].getOutputSize()) throw new RuntimeException();
             input_nodes[i].setOutputValue(input[i]);
@@ -68,14 +69,14 @@ public class Network {
         }
     }
 
-    private void feed(Tensor3D input) {
+    public void feed(Tensor3D input) {
         input_nodes[0].setOutputValue(input);
         for (Node i : calculation_order) {
             i.abs_feedForward();
         }
     }
 
-    private double backpropagateError(Tensor... exp) {
+    public double backpropagateError(Tensor... exp) {
         double e = 0;
         for (int i = 0; i < output_nodes.length; i++) {
             e += output_nodes[i].calculateLoss(exp[i]);
@@ -86,7 +87,7 @@ public class Network {
         return e;
     }
 
-    private double backpropagateError(Tensor exp) {
+    public double backpropagateError(Tensor exp) {
         double e = output_nodes[0].calculateLoss(exp);
         for (int i = calculation_order.length - 1; i >= 0; i--) {
             calculation_order[i].abs_feedBackward();
@@ -94,7 +95,26 @@ public class Network {
         return e;
     }
 
-    private void updateWeights(double eta) {
+    /**
+     * it assumes that the loss is already set to this given node.
+     * it will backpropagate the error to the input node(s)
+     * @param startingFrom
+     * @return
+     */
+    public void backpropagateError(Node startingFrom){
+        boolean iter = false;
+        for (int i = calculation_order.length - 1; i >= 0; i--) {
+            if(calculation_order[i].equals(startingFrom)){
+                iter = true;
+            }
+            if(iter){
+                calculation_order[i].abs_feedBackward();
+            }
+
+        }
+    }
+
+    public void updateWeights(double eta) {
         for (int i = calculation_order.length - 1; i >= 0; i--) {
             calculation_order[i].abs_updateWeights(eta);
         }
@@ -186,6 +206,19 @@ public class Network {
         for (Node l : calculation_order) {
             System.out.println("\n" + l.getIdentifier());
             System.out.println(l.getOutputValue());
+            System.out.print("-------------------------------------------------------------" +
+                    "----------------------------------------------------");
+        }
+        System.out.println("\r########################################################" +
+                "#########################################################");
+    }
+
+    public void print_inputs() {
+        System.out.print("########################################################" +
+                "#########################################################");
+        for (Node l : calculation_order) {
+            System.out.println("\n" + l.getIdentifier());
+            System.out.println(l.getInputValue());
             System.out.print("-------------------------------------------------------------" +
                     "----------------------------------------------------");
         }
@@ -354,7 +387,7 @@ public class Network {
     }
 
     public static Node parsing_generateNode(parser.tree.Node node) {
-        String name = node.getName();
+        String name = node.getName().substring(0,node.getName().indexOf("("));
         Node result = null;
         switch (name) {
             case "InputNode":
@@ -378,6 +411,12 @@ public class Network {
                     case "Sigmoid":
                         ((ConvolutionNode) result).setActivationFunction(new Sigmoid());
                         break;
+                    case "LeakyReLU":
+                        ((ConvolutionNode) result).setActivationFunction(new LeakyReLU());
+                        break;
+                    case "None":
+                        ((ConvolutionNode) result).setActivationFunction(new None());
+                        break;
                 }
                 break;
             case "DeconvNode":
@@ -393,6 +432,12 @@ public class Network {
                         break;
                     case "Sigmoid":
                         ((DeconvNode) result).setActivationFunction(new Sigmoid());
+                        break;
+                    case "LeakyReLU":
+                        ((DeconvNode) result).setActivationFunction(new LeakyReLU());
+                        break;
+                    case "None":
+                        ((DeconvNode) result).setActivationFunction(new None());
                         break;
                 }
                 break;
@@ -410,6 +455,13 @@ public class Network {
                     case "Sigmoid":
                         ((DenseNode) result).setActivationFunction(new Sigmoid());
                         break;
+                    case "LeakyReLU":
+                        ((DenseNode) result).setActivationFunction(new LeakyReLU());
+                        break;
+                    case "None":
+                        ((DenseNode) result).setActivationFunction(new None());
+                        break;
+
                 }
                 break;
             case "FlattenNode":
@@ -448,6 +500,7 @@ public class Network {
             Builder builder = new Builder();
             for (parser.tree.Node n : parser.getContent().getChilds().get(0).getChilds()) {
                 Node k = parsing_generateNode(n);
+                System.out.println(k.getIdentifier());
                 map.put(k.getIdentifier(), n);
                 if (k instanceof InputNode) {
                     builder.addNode(k);
@@ -489,7 +542,8 @@ public class Network {
             parser.create(file);
             parser.tree.Node root = new parser.tree.Node("Network");
             for (Node node : this.calculation_order) {
-                parser.tree.Node result = new parser.tree.Node(node.getClass().getSimpleName());
+                parser.tree.Node result = new parser.tree.Node(node.getClass().getSimpleName()+
+                        "("+node.getIdentifier()+")");
                 result.addAttribute("identity", node.getIdentifier());
                 String prev = "";
                 for (Node n : node.getPreviousNodes()) {
@@ -523,7 +577,7 @@ public class Network {
                         result.addAttribute("padding", "" + ((DeconvNode) node).getPadding());
                         result.addAttribute("activation_function", ((DeconvNode) node).getActivation_function().getClass().getSimpleName());
                         result.addAttribute("filter", Arrays.toString(((DeconvNode) node).getFilter().getData()));
-                        //result.addAttribute("bias", Arrays.toString(((DeconvNode) node).getBias().getData()));
+                        result.addAttribute("bias", Arrays.toString(((DeconvNode) node).getBias().getData()));
                         break;
                     case "DenseNode":
                         result.addAttribute("height", "" + ((DenseNode) node).getOutputHeight());

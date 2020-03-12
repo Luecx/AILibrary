@@ -10,7 +10,6 @@ import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.network.*;
 import neuralnetwork.network.special.GramNode;
 import neuralnetwork.nodes.Node;
-import sun.nio.ch.Net;
 
 import java.util.ArrayList;
 import java.util.Arrays;

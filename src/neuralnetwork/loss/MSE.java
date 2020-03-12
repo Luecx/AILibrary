@@ -2,11 +2,12 @@ package neuralnetwork.loss;
 
 import core.tensor.Tensor;
 import neuralnetwork.network.OutputNode;
+import neuralnetwork.nodes.Node;
 
 public class MSE extends Error {
 
     @Override
-    public double calculate_loss(OutputNode out, Tensor exp, double fac) {
+    public double calculate_loss(Node out, Tensor exp, double fac) {
         double v = 0;
 
         for(int i = 0; i < out.getOutputSize(); i++){

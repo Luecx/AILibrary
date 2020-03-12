@@ -1,5 +1,7 @@
 package boids_model;
 
+import core.vector.Vector;
+
 import java.util.ArrayList;
 
 public abstract class Swarm {
@@ -17,6 +19,17 @@ public abstract class Swarm {
     }
 
     protected abstract void update();
+
+    public ArrayList<Unit> getUnits(Vector center, double distance){
+        ArrayList<Unit> units = new ArrayList<>();
+        for(Unit u:this.units){
+            //System.out.println(u.getPosition().sub(center).length() + "   "  + center + "   " + u.getPosition());
+            if(u.getPosition().sub(center).length() < distance){
+                units.add(u);
+            }
+        }
+        return units;
+    }
 
     public ArrayList<Unit> getUnits() {
         return units;

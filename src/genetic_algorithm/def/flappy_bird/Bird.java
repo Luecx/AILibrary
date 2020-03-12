@@ -1,10 +1,10 @@
-package luecx.ai.genetic_algorithm.def.flappy_bird;
+package genetic_algorithm.def.flappy_bird;
 
 
-import luecx.ai.genetic_algorithm.def.GeneticClient;
-import old_model.Network;
-import old_model.NetworkBuilder;
-import old_model.layers.DenseLayer;
+import genetic_algorithm.def.GeneticClient;
+import neuralnetwork.builder.Builder;
+import neuralnetwork.builder.Network;
+import neuralnetwork.network.DenseNode;
 
 import java.awt.*;
 
@@ -21,10 +21,10 @@ public class Bird implements GeneticClient {
     private Network network;
 
     public Bird() {
-        NetworkBuilder network_builder = new NetworkBuilder(1,1,4);
-        network_builder.addLayer(new DenseLayer(4));
-        network_builder.addLayer(new DenseLayer(1));
-        this.network = network_builder.buildNetwork();
+        Builder network_builder = new Builder(1,1,4);
+        network_builder.addNode(new DenseNode(4));
+        network_builder.addNode(new DenseNode(1));
+        this.network = network_builder.build_network();
     }
 
     public void process(double time, double acceleration, double gravity){
