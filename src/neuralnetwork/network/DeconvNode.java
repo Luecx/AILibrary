@@ -138,7 +138,7 @@ public class DeconvNode extends Node1To1 {
                                 for (int input_d = 0; input_d < this.getInputDepth(); input_d++) {
                                     sum += this.filter.get(input_d, j, i, n) *
                                             getInputValue().get(input_d, input_x, input_y);
-//                                    this.output_value.add(this.filter.get(input_d, j, i, n) *
+//                                    this.outputValue.add(this.filter.get(input_d, j, i, n) *
 //                                            getInputValue().get(input_d, input_x, input_y), j, x_o, y_o);
                                 }
                                 this.output_value.add(sum, j, x_o, y_o);
