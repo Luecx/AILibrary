@@ -90,6 +90,13 @@ public class Dimension {
         return 0;
     }
 
+    public static Dimension fromTensor(Tensor tensor){
+        return new Dimension(
+                tensor.rank() >= 1 ? tensor.getDimension(0):1,
+                tensor.rank() >= 2 ? tensor.getDimension(1):1,
+                tensor.rank() >= 3 ? tensor.getDimension(2):1);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

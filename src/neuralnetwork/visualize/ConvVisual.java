@@ -12,6 +12,7 @@ import neuralnetwork.functions.None;
 import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.loss.MSE;
 import neuralnetwork.network.*;
+import neuralnetwork.network.special.SoftMaxNode;
 
 import javax.swing.*;
 import java.awt.*;
@@ -114,38 +115,62 @@ public class ConvVisual {
 
     public static void main(String[] args) {
 
-        Builder builder = new Builder(3,100,100);
-        builder.addNode(new ConvolutionNode(4, 3,1,1).setActivationFunction(new LeakyReLU()));
-        builder.addNode(new PoolingNode(2));
-        builder.addNode(new ConvolutionNode(8, 3,1,1).setActivationFunction(new LeakyReLU()));
-        builder.addNode(new PoolingNode(2));
-        builder.addNode(new ConvolutionNode(8, 3,1,1).setActivationFunction(new LeakyReLU()));
-        builder.addNode(new PoolingNode(2));
-        builder.addNode(new ConvolutionNode(16, 3,1,1).setActivationFunction(new LeakyReLU()));
-        builder.addNode(new PoolingNode(2));
-        builder.addNode(new ConvolutionNode(4, 3,1,1).setActivationFunction(new LeakyReLU()));
-        builder.addNode(new FlattenNode());
-        //builder.addNode(new DenseNode(100).setActivationFunction(new LeakyReLU()));
-        builder.addNode(new DenseNode(10).setActivationFunction(new Sigmoid()));
 
+//        Builder builder = new Builder(3,28,28);
+//        builder.addNode(new ConvolutionNode(2, 5,1,1).setActivationFunction(new LeakyReLU()));
+//        builder.addNode(new PoolingNode(2));
+//        builder.addNode(new ConvolutionNode(4, 3,1,1).setActivationFunction(new LeakyReLU()));
+//        builder.addNode(new PoolingNode(2));
+//        builder.addNode(new ConvolutionNode(8, 3,1,1).setActivationFunction(new LeakyReLU()));
+//        builder.addNode(new PoolingNode(2));
+//        builder.addNode(new ConvolutionNode(16, 3,1,1).setActivationFunction(new LeakyReLU()));
+//        builder.addNode(new PoolingNode(2));
+//        builder.addNode(new ConvolutionNode(8, 3,1,1).setActivationFunction(new LeakyReLU()));
+//        builder.addNode(new FlattenNode());
+//        builder.addNode(new DenseNode(100).setActivationFunction(new LeakyReLU()));
+//        builder.addNode(new DenseNode(10).setActivationFunction(new Sigmoid()));
+//        builder.addNode(new SoftMaxNode());
+
+        Builder builder = new Builder(1,1,60);
+        //builder.addNode(new DenseNode(40).setActivationFunction(new LeakyReLU()));
+        builder.addNode(new DenseNode(15).setActivationFunction(new LeakyReLU()));
+        builder.addNode(new DenseNode(1).setActivationFunction(new Sigmoid()));
 
         Network network = builder.build_network();
 
-        //network = Network.load("res/test.net");
+        Tensor3D in = new Tensor3D(1,1,60);
+        in.randomizeRegular(0,1);
 
-//        TrainSet trainSet = TrainSet.fromMnist("res/train-images.idx3-ubyte", "res/train-labels.idx1-ubyte",0,1);
-//        network.train(trainSet, 1000, 0.01);
-
-        //network.write("res/test.net");
-
-
-        for(int i = 0; i < 5; i++){
-
-
-            ConvolutionNode convNode = (ConvolutionNode) network.getNodes()[9];
-            Tensor3D input = visualize(network, convNode, i,200,1E5);
-            displayImage(toImage(input));
+        long t = System.currentTimeMillis();
+        for(int i = 0; i < 1E6; i++){
+            network.calculate(in);
         }
+        t = System.currentTimeMillis()-t;
+        System.out.println(1E9 / t);
+
+//        network.print_overview();
+//        network.print_timecheck(1000000);
+
+        //Network network = Network.load("res/test.net");
+
+
+//        TrainSet trainSet = TrainSet.fromMnist("res/train-images.idx3-ubyte", "res/train-labels.idx1-ubyte",0,10);
+//
+//
+//        for(int i = 0; i < 100; i++){
+//            network.train(trainSet, 10, 0.01);
+//
+//            network.write("res/test.net");
+//        }
+
+
+//        for(int i = 0; i < 5; i++){
+//
+//
+//            ConvolutionNode convNode = (ConvolutionNode) network.getNodes()[9];
+//            Tensor3D input = visualize(network, convNode, i,2000,1E5);
+//            displayImage(toImage(input));
+//        }
 
 
     }

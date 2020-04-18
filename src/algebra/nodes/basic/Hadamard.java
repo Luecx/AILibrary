@@ -5,9 +5,9 @@ import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
 import neuralnetwork.builder.BuildException;
 
-public class Add extends Node<Add> {
+public class Hadamard extends Node<Hadamard> {
 
-    public Add(Node... subChilds) {
+    public Hadamard(Node... subChilds) {
         super(NodeCount.UNLIMITED, NodeCount.UNLIMITED);
         for(Node n:subChilds){
             this.addPreviousNode(n);
@@ -29,25 +29,34 @@ public class Add extends Node<Add> {
 
     @Override
     public void calc() {
-        outputValue.reset(0);
+        outputValue.reset(1);
         for(int i = 0; i < getPreviousNodes().size(); i++){
             outputDerivative[i].reset(1);
         }
-        for(Node n:getPreviousNodes()){
-            outputValue.self_add(n.getOutputValue());
+        for(int i = 0; i < getPreviousNodes().size(); i++){
+            for(int n = 0; n < outputValue.size(); n++){
+                outputValue.getData()[n] *= getInputValue(i).getData()[n];
+            }
+        }
+        for(int i = 0; i < getPreviousNodes().size(); i++){
+            for(int n = 0; n < outputValue.size(); n++){
+                outputDerivative[i].getData()[n] = outputValue.getData()[n] / getInputValue(i).getData()[n];
+            }
         }
     }
 
     @Override
     public void autoDiff() {
-        for(Node n:getPreviousNodes()){
-            n.getOutputGradient().self_add(this.outputGradient);
+        for(int inp = 0; inp < getPreviousNodes().size(); inp++){
+            for(int i = 0; i < this.outputGradient.size(); i++){
+                getInputGradient(inp).getData()[i] += outputGradient.getData()[i] * outputDerivative[inp].getData()[i];
+            }
         }
     }
 
     @Override
-    public Add copy() {
-        Add add = new Add();
+    public Hadamard copy() {
+        Hadamard add = new Hadamard();
         for(Node n:getPreviousNodesCopy()){
             add.addPreviousNode(n);
         }
@@ -61,7 +70,7 @@ public class Add extends Node<Add> {
         for(Node c:getPreviousNodes()){
             builder.append(c.toString());
             if(c != getPreviousNodes().get(getPreviousNodes().size()-1)){
-                builder.append("+");
+                builder.append("*");
             }
         }
         builder.append(")");

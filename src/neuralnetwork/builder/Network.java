@@ -9,6 +9,7 @@ import neuralnetwork.functions.ReLU;
 import neuralnetwork.functions.Sigmoid;
 import neuralnetwork.loss.Error;
 import neuralnetwork.network.*;
+import neuralnetwork.network.special.SoftMaxNode;
 import neuralnetwork.nodes.Node;
 import parser.parser.Parser;
 import parser.parser.ParserTools;
@@ -154,6 +155,7 @@ public class Network {
             E = 0;
             System.out.format("epoch: %-10s", (i+1));
             for(int k = 0; k < trainSet.size(); k++){
+                System.out.print("\rindex " + k);
                 E+=this.train(trainSet.getInput(k), trainSet.getOutput(k), eta);
             }
             System.out.format("loss: %-10s %n",E/trainSet.size());
@@ -485,6 +487,8 @@ public class Network {
             case "SplitNode":
                 result = new SplitNode();
                 break;
+            case "SoftMax":
+                result = new SoftMaxNode();
         }
         result.setIdentifier(node.getAttribute("identity").getValue());
         return result;
@@ -500,7 +504,6 @@ public class Network {
             Builder builder = new Builder();
             for (parser.tree.Node n : parser.getContent().getChilds().get(0).getChilds()) {
                 Node k = parsing_generateNode(n);
-                System.out.println(k.getIdentifier());
                 map.put(k.getIdentifier(), n);
                 if (k instanceof InputNode) {
                     builder.addNode(k);

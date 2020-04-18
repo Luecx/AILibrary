@@ -1,43 +1,44 @@
 package algebra.nodes;
 
+import algebra.nodes.basic.Add;
 import core.exceptions.NotMatchingSlotsException;
 import core.tensor.Tensor;
-import core.tensor.Tensor3D;
+import core.tensor.Tensor;
 import neuralnetwork.builder.BuildException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-public abstract class Node {
+public abstract class Node<T extends Node<T>> {
 
 
 
-    private String identifier;
+    private String                  identifier = null;
 
-    private Dimension outputDimension;
-    protected Tensor outputValue;
-    protected Tensor outputDerivative;
-    protected Tensor outputGradient;
+    private Dimension               outputDimension;
+    protected Tensor                outputValue;
+    protected Tensor[]              outputDerivative;
+    protected Tensor                outputGradient;
 
-
-    private NodeCount max_prev_nodes;
-    private NodeCount max_next_nodes;
+    private NodeCount               maxPrevNodes;
+    private NodeCount               maxNextNodes;
 
     ArrayList<Node> previous_nodes = new ArrayList<>();
     ArrayList<Node> next_nodes = new ArrayList<>();
 
-    public Node(NodeCount max_prev_nodes, NodeCount max_next_nodes) {
-        this.max_prev_nodes = max_prev_nodes;
-        this.max_next_nodes = max_next_nodes;
+    public Node(NodeCount maxPrevNodes,
+                NodeCount maxNextNodes) {
+        this.maxPrevNodes = maxPrevNodes;
+        this.maxNextNodes = maxNextNodes;
     }
     public Node(
             Dimension dimension,
-            NodeCount max_prev_nodes,
-            NodeCount max_next_nodes) {
+            NodeCount maxPrevNodes,
+            NodeCount maxNextNodes) {
         this.outputDimension = new Dimension(dimension);
-        this.max_prev_nodes = max_prev_nodes;
-        this.max_next_nodes = max_next_nodes;
+        this.maxPrevNodes = maxPrevNodes;
+        this.maxNextNodes = maxNextNodes;
     }
 
     public void calcOutputDim(){
@@ -54,7 +55,9 @@ public abstract class Node {
         }
     }
     private void init(){
-        init();
+        for(int i = 0; i < previous_nodes.size(); i++){
+            outputDerivative[i] = new Tensor(outputDimension.getDepth(), outputDimension.getWidth(), outputDimension.getHeight());
+        }
 
         outputValue = outputDimension.emptyTensor();
         outputDerivative = outputDimension.emptyTensor();
@@ -65,38 +68,83 @@ public abstract class Node {
         calcOutputDim();
         init();
     }
-
-
+    public void resetGrad(){
+        outputGradient.reset(0);
+    }
 
     protected abstract Dimension selfCalcOutputDim() throws BuildException;
     protected abstract void selfInit();
     public abstract void calc();
     public abstract void autoDiff();
+    public abstract T copy();
 
     private boolean connectNextNode(Node n){
-        if(next_nodes.size() >= max_next_nodes.nodes){
+        for(Node k:next_nodes){
+            if(k == n){
+                return false;
+            }
+        }
+        if(next_nodes.size() >= maxNextNodes.nodes){
             return false;
         }
         next_nodes.add(n);
         return true;
     }
     private boolean connectPreviousNode(Node n){
-        if(previous_nodes.size() >= max_prev_nodes.nodes){
+        for(Node k:previous_nodes){
+            if(k == n){
+                return false;
+            }
+        }
+        if(previous_nodes.size() >= maxPrevNodes.nodes){
             return false;
         }
         previous_nodes.add(n);
         return true;
     }
-    public void addPreviousNode(Node n){
-        if(!previous_nodes.contains(n)){
-            if(connectPreviousNode(n))
-                n.connectNextNode(this);
+    private boolean connectPreviousNode(Node n, int index){
+        for(Node k:previous_nodes){
+            if(k == n){
+                return false;
+            }
         }
+        if(previous_nodes.size() >= maxPrevNodes.nodes){
+            return false;
+        }
+        previous_nodes.add(index, n);
+        return true;
+    }
+    public boolean addPreviousNode(Node n) {
+        if(!previous_nodes.contains(n)){
+            if(connectPreviousNode(n)){
+                if(!n.connectNextNode(this)){
+                    removePreviousNode(n);
+                    return false;
+                }
+            }else{
+                return false;
+            }
+        }
+        return true;
+    }
+    public boolean addPreviousNode(Node n, int index) {
+        if(!previous_nodes.contains(n)){
+            if(connectPreviousNode(n,index)){
+                if(!n.connectNextNode(this)){
+                    removePreviousNode(n);
+                    return false;
+                }
+            }else{
+                return false;
+            }
+        }
+        return true;
     }
 
-    public void addNextNode(Node n){
-        n.addPreviousNode(this);
+    public boolean addNextNode(Node n){
+        return n.addPreviousNode(this);
     }
+
     public void removePreviousNode(Node n){
         if(previous_nodes.contains(n)){
             n.next_nodes.remove(this);
@@ -106,6 +154,27 @@ public abstract class Node {
     public void removeNextNode(Node n){
         n.removePreviousNode(this);
     }
+
+    public boolean replacePreviousNode(Node old, Node newNode){
+        int index = previous_nodes.indexOf(old);
+        if(index == -1) return false;
+
+        removePreviousNode(old);
+
+        return addPreviousNode(newNode, index);
+    }
+    public boolean replaceWith(Node newNode){
+        boolean works = true;
+        ArrayList<Node> nextNodes = new ArrayList<>();
+        for(Node next:getNextNodes()){
+            nextNodes.add(next);
+        }
+        for(Node nd:nextNodes){
+            works = works && nd.replacePreviousNode(this, newNode);
+        }
+        return works;
+    }
+
     public boolean hasNextNode(){
         return next_nodes.size() > 0;
     }
@@ -115,12 +184,25 @@ public abstract class Node {
     public Node getPreviousNode(){return previous_nodes.get(0);}
     public Node getPreviousNode(int index){return  previous_nodes.get(index);}
     public ArrayList<Node> getPreviousNodes(){return previous_nodes;}
+    public ArrayList<Node> getPreviousNodesCopy(){
+        ArrayList<Node> nodes = new ArrayList<>();
+        for(Node n:previous_nodes){
+            nodes.add(n.copy());
+        }
+        return nodes;
+    }
     public ArrayList<Node> getNextNodes(){return next_nodes;}
+    public ArrayList<Node> getNextNodesCopy(){
+        ArrayList<Node> nodes = new ArrayList<>();
+        for(Node n:next_nodes){
+            nodes.add(n.copy());
+        }
+        return nodes;
+    }
 
     public String getIdentifier() {
         return identifier;
     }
-
 
     public void setIdentifier(String identifier) {
         if(this.identifier == null && identifier != null)
@@ -133,8 +215,8 @@ public abstract class Node {
     public Tensor getOutputValue() {
         return outputValue;
     }
-    public Tensor getOutputDerivative() {
-        return outputDerivative;
+    public Tensor getOutputDerivative(int input) {
+        return outputDerivative[input];
     }
     public Tensor getOutputGradient() {
         return outputGradient;
@@ -149,9 +231,7 @@ public abstract class Node {
     public Tensor getInputGradient(int index){
         return previous_nodes.get(index).getOutputGradient();
     }
-    public Tensor getInputDerivatvie(int index){
-        return previous_nodes.get(index).getOutputDerivative();
-    }
+
 
     public Dimension getInputDimension() {
         return previous_nodes.get(0).getOutputDimension();
@@ -162,8 +242,13 @@ public abstract class Node {
     public Tensor getInputGradient(){
         return previous_nodes.get(0).getOutputGradient();
     }
-    public Tensor getInputDerivatvie(){
-        return previous_nodes.get(0).getOutputDerivative();
+
+
+    public NodeCount getMaxPrevNodes() {
+        return maxPrevNodes;
+    }
+    public NodeCount getMaxNextNodes() {
+        return maxNextNodes;
     }
 
     public void setOutputValue(Tensor output_value) {
@@ -173,20 +258,40 @@ public abstract class Node {
             throw new NotMatchingSlotsException(this.outputDimension.size(), output_value.size());
         }
     }
-    public void setOutputDerivative(Tensor3D output_derivative) {
+    public void setOutputDerivative(int input, Tensor output_derivative) {
         if(outputValue.size() == this.outputDimension.size())
-            this.outputDerivative.setData(Arrays.copyOf(output_derivative.getData(), output_derivative.size()));
+            this.outputDerivative[input].setData(Arrays.copyOf(output_derivative.getData(), output_derivative.size()));
         else{
             throw new NotMatchingSlotsException(this.outputDimension.size(), output_derivative.size() );
         }
     }
-    public void setOutputGradient(Tensor3D output_gradient) {
+    public void setOutputGradient(Tensor output_gradient) {
         if(outputValue.size() == this.outputDimension.size())
             this.outputGradient.setData(Arrays.copyOf(output_gradient.getData(), output_gradient.size()));
         else{
             throw new NotMatchingSlotsException(this.outputDimension.size(), output_gradient.size());
         }
     }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return
+                identifier.equals(node.identifier) &&
+                outputDimension.equals(((Node) o).outputDimension);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(outputDimension, identifier);
+    }
+
+
+
+
 
     public static final boolean matchingDimension(Node node, Tensor tensor){
         if(
@@ -197,16 +302,16 @@ public abstract class Node {
 
         if(
                 tensor.rank() == 2 &&
-                        node.getOutputDimension().getDepth() == 1 &&
-                        tensor.getDimension(0) == node.getOutputDimension().getWidth() &&
-                        tensor.getDimension(1) == node.getOutputDimension().getHeight()) return true;
+                node.getOutputDimension().getDepth() == 1 &&
+                tensor.getDimension(0) == node.getOutputDimension().getWidth() &&
+                tensor.getDimension(1) == node.getOutputDimension().getHeight()) return true;
 
         if(
                 tensor.rank() == 1 &&
-                        node.getOutputDimension().getDepth() == 1 &&
-                        node.getOutputDimension().getWidth() == 1 &&
-                        tensor.getDimension(0) == node.getOutputDimension().getHeight()) return true;
-        
+                node.getOutputDimension().getDepth() == 1 &&
+                node.getOutputDimension().getWidth() == 1 &&
+                tensor.getDimension(0) == node.getOutputDimension().getHeight()) return true;
+
         return false;
     }
     public static final boolean matchingDimension(Node node1, Node node2){
@@ -222,18 +327,9 @@ public abstract class Node {
         return true;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Node node = (Node) o;
-        return
-                identifier.equals(node.identifier) &&
-                outputDimension.equals(((Node) o).outputDimension);
-    }
+    public static void main(String[] args) {
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(outputDimension, identifier);
+        System.out.println(new Add(new Add(), new Add()));
+
     }
 }
