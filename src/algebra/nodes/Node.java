@@ -56,9 +56,9 @@ public abstract class Node {
     private void init(){
         init();
 
-        outputValue = new Tensor3D(outputDimension.getDepth(), outputDimension.getWidth(), outputDimension.getHeight());
-        outputDerivative = new Tensor3D(outputDimension.getDepth(), outputDimension.getWidth(), outputDimension.getHeight());
-        outputGradient = new Tensor3D(outputDimension.getDepth(), outputDimension.getWidth(), outputDimension.getHeight());
+        outputValue = outputDimension.emptyTensor();
+        outputDerivative = outputDimension.emptyTensor();
+        outputGradient = outputDimension.emptyTensor();
 
     }
     public void build(){
@@ -113,6 +113,7 @@ public abstract class Node {
         return previous_nodes.size() > 0;
     }
     public Node getPreviousNode(){return previous_nodes.get(0);}
+    public Node getPreviousNode(int index){return  previous_nodes.get(index);}
     public ArrayList<Node> getPreviousNodes(){return previous_nodes;}
     public ArrayList<Node> getNextNodes(){return next_nodes;}
 

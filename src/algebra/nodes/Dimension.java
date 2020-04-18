@@ -1,15 +1,21 @@
 package algebra.nodes;
 
+import core.tensor.Tensor;
+import core.tensor.Tensor2D;
+import core.tensor.Tensor3D;
+import core.tensor.Tensor4D;
+
 import java.util.Objects;
 
 public class Dimension {
 
-    private int depth = 1, width = 1, height = 1;
+    private int depth = 1, width = 1, height = 1, trength = 1;
 
     public Dimension(Dimension other) {
         this.depth = other.depth;
         this.width = other.width;
         this.height = other.height;
+        this.trength = other.trength;
     }
 
     public Dimension(int height) {
@@ -27,8 +33,13 @@ public class Dimension {
         this.height = height;
     }
 
+    public Dimension(int trength, int depth, int width, int height){
+        this(depth, width, height);
+        this.trength = trength;
+    }
+
     public int size(){
-        return depth * width * height;
+        return depth * width * height * trength;
     }
 
     public int getDepth() {
@@ -55,6 +66,30 @@ public class Dimension {
         this.height = height;
     }
 
+    public int getTrength() {
+        return trength;
+    }
+
+    public void setTrength(int trength) {
+        this.trength = trength;
+    }
+
+    public Tensor emptyTensor(){
+        if(trength != 1) return new Tensor4D(height, width, depth, trength);
+        if(height != 1)return new Tensor3D(height, width, depth);
+        if(width != 1) return new Tensor2D(height, width);
+        return new Tensor(height);
+    }
+
+
+    public int dimCount(){
+        if(trength != 1) return 4;
+        if(height != 1) return 3;
+        if(width != 1) return 2;
+        if(depth != 1) return 1;
+        return 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -77,6 +112,7 @@ public class Dimension {
                 "depth=" + depth +
                 ", width=" + width +
                 ", height=" + height +
+                ", trength=" + trength +
                 '}';
     }
 }
