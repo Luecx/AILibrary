@@ -3,9 +3,10 @@ package algebra.nodes.basic;
 import algebra.nodes.Dimension;
 import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
+import algebra.nodes.functions.ElementWiseOperation;
 import neuralnetwork.builder.BuildException;
 
-public class Hadamard extends Node<Hadamard> {
+public class Hadamard extends ElementWiseOperation<Hadamard> {
 
     public Hadamard(Node... subChilds) {
         super(NodeCount.UNLIMITED, NodeCount.UNLIMITED);
@@ -31,7 +32,7 @@ public class Hadamard extends Node<Hadamard> {
     public void calc() {
         outputValue.reset(1);
         for(int i = 0; i < getPreviousNodes().size(); i++){
-            outputDerivative[i].reset(1);
+            functionDerivative[i].reset(1);
         }
         for(int i = 0; i < getPreviousNodes().size(); i++){
             for(int n = 0; n < outputValue.size(); n++){
@@ -40,7 +41,7 @@ public class Hadamard extends Node<Hadamard> {
         }
         for(int i = 0; i < getPreviousNodes().size(); i++){
             for(int n = 0; n < outputValue.size(); n++){
-                outputDerivative[i].getData()[n] = outputValue.getData()[n] / getInputValue(i).getData()[n];
+                functionDerivative[i].getData()[n] = outputValue.getData()[n] / getInputValue(i).getData()[n];
             }
         }
     }
@@ -49,7 +50,7 @@ public class Hadamard extends Node<Hadamard> {
     public void autoDiff() {
         for(int inp = 0; inp < getPreviousNodes().size(); inp++){
             for(int i = 0; i < this.outputGradient.size(); i++){
-                getInputGradient(inp).getData()[i] += outputGradient.getData()[i] * outputDerivative[inp].getData()[i];
+                getInputGradient(inp).getData()[i] += outputGradient.getData()[i] * functionDerivative[inp].getData()[i];
             }
         }
     }

@@ -3,7 +3,6 @@ package algebra.nodes;
 import algebra.nodes.basic.Add;
 import core.exceptions.NotMatchingSlotsException;
 import core.tensor.Tensor;
-import core.tensor.Tensor;
 import neuralnetwork.builder.BuildException;
 
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ public abstract class Node<T extends Node<T>> {
 
     private Dimension               outputDimension;
     protected Tensor                outputValue;
-    protected Tensor[]              outputDerivative;
     protected Tensor                outputGradient;
 
     private NodeCount               maxPrevNodes;
@@ -55,15 +53,10 @@ public abstract class Node<T extends Node<T>> {
         }
     }
     private void init(){
-        for(int i = 0; i < previous_nodes.size(); i++){
-            outputDerivative[i] = new Tensor(outputDimension.getDepth(), outputDimension.getWidth(), outputDimension.getHeight());
-        }
-
         outputValue = outputDimension.emptyTensor();
-        outputDerivative = outputDimension.emptyTensor();
         outputGradient = outputDimension.emptyTensor();
-
     }
+
     public void build(){
         calcOutputDim();
         init();
@@ -215,9 +208,6 @@ public abstract class Node<T extends Node<T>> {
     public Tensor getOutputValue() {
         return outputValue;
     }
-    public Tensor getOutputDerivative(int input) {
-        return outputDerivative[input];
-    }
     public Tensor getOutputGradient() {
         return outputGradient;
     }
@@ -258,13 +248,7 @@ public abstract class Node<T extends Node<T>> {
             throw new NotMatchingSlotsException(this.outputDimension.size(), output_value.size());
         }
     }
-    public void setOutputDerivative(int input, Tensor output_derivative) {
-        if(outputValue.size() == this.outputDimension.size())
-            this.outputDerivative[input].setData(Arrays.copyOf(output_derivative.getData(), output_derivative.size()));
-        else{
-            throw new NotMatchingSlotsException(this.outputDimension.size(), output_derivative.size() );
-        }
-    }
+
     public void setOutputGradient(Tensor output_gradient) {
         if(outputValue.size() == this.outputDimension.size())
             this.outputGradient.setData(Arrays.copyOf(output_gradient.getData(), output_gradient.size()));

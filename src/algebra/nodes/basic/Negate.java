@@ -3,9 +3,10 @@ package algebra.nodes.basic;
 import algebra.nodes.Dimension;
 import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
+import algebra.nodes.functions.ElementWiseOperation;
 import neuralnetwork.builder.BuildException;
 
-public class Negate extends Node<Negate> {
+public class Negate extends ElementWiseOperation<Negate> {
 
     public Negate(Node subChilds) {
         super(NodeCount.ONE, NodeCount.UNLIMITED);
@@ -25,7 +26,7 @@ public class Negate extends Node<Negate> {
     @Override
     public void calc() {
         outputValue.reset(0);
-        outputDerivative[0].reset(-1);
+        getFunctionDerivative(0).reset(-1);
 
         outputValue.self_sub(getPreviousNode().getOutputValue());
     }

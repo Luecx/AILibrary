@@ -5,12 +5,18 @@ import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
 import neuralnetwork.builder.BuildException;
 
-public class MatrixVectorProduct extends Node {
+public class MatrixVectorProduct extends Node<MatrixVectorProduct> {
 
-    public MatrixVectorProduct() {
-        super(NodeCount.TWO, NodeCount.ONE);
+    public MatrixVectorProduct(Node mat, Node x){
+        super(NodeCount.TWO, NodeCount.UNLIMITED);
+        this.addPreviousNode(mat);
+        this.addPreviousNode(x);
     }
 
+
+    public MatrixVectorProduct() {
+        super(NodeCount.TWO, NodeCount.UNLIMITED);
+    }
 
     @Override
     protected Dimension selfCalcOutputDim() throws BuildException {
@@ -19,7 +25,6 @@ public class MatrixVectorProduct extends Node {
 
 
         boolean works = false;
-
 
         if (mat.getOutputDimension().dimCount() <= 2 &&
                 mat.getOutputDimension().dimCount() - vec.getOutputDimension().dimCount() == 1 &&
@@ -64,14 +69,18 @@ public class MatrixVectorProduct extends Node {
             double vecDiff = 0;
 
             for(int i = 0; i < mat.getOutputDimension().getHeight(); i++){
-                //autodiff for matrix:
-                mat.getOutputDerivative().add(getOutputDerivative().get(i) * vec.getOutputValue().get(n), i,n);
+                mat.getOutputGradient().add(getOutputGradient().get(i) * vec.getOutputValue().get(n), i,n);
 
-                vecDiff += mat.getOutputValue().get(i,n) * getOutputDerivative().get(i);
+                vecDiff += mat.getOutputValue().get(i,n) * getOutputGradient().get(i);
             }
 
-            vec.getOutputDerivative().add(vecDiff, n);
+            vec.getOutputGradient().add(vecDiff, n);
         }
+    }
+
+    @Override
+    public MatrixVectorProduct copy() {
+        return new MatrixVectorProduct();
     }
 
     public Node getMatNode(){

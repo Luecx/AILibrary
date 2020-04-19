@@ -3,9 +3,10 @@ package algebra.nodes.basic;
 import algebra.nodes.Dimension;
 import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
+import algebra.nodes.functions.ElementWiseOperation;
 import neuralnetwork.builder.BuildException;
 
-public class Pow extends Node<Pow> {
+public class Pow extends ElementWiseOperation<Pow> {
 
     private double power;
 
@@ -28,11 +29,11 @@ public class Pow extends Node<Pow> {
     @Override
     public void calc() {
         outputValue.reset(0);
-        outputDerivative[0].reset(-1);
+        functionDerivative[0].reset(-1);
 
         for(int i = 0; i < getOutputValue().size(); i++){
             getOutputValue().getData()[i] = Math.pow(getInputValue().getData()[i],power);
-            getOutputDerivative(0).getData()[i] = power * Math.pow(getInputValue().getData()[i],power-1);
+            getFunctionDerivative(0).getData()[i] = power * Math.pow(getInputValue().getData()[i],power-1);
         }
 
     }
@@ -40,7 +41,7 @@ public class Pow extends Node<Pow> {
     @Override
     public void autoDiff() {
         for(int i = 0; i < getOutputGradient().size(); i++){
-            getInputGradient().getData()[i] += getOutputGradient().getData()[i] * outputDerivative[0].getData()[i];
+            getInputGradient().getData()[i] += getOutputGradient().getData()[i] * functionDerivative[0].getData()[i];
         }
     }
 

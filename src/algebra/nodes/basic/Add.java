@@ -3,9 +3,10 @@ package algebra.nodes.basic;
 import algebra.nodes.Dimension;
 import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
+import algebra.nodes.functions.ElementWiseOperation;
 import neuralnetwork.builder.BuildException;
 
-public class Add extends Node<Add> {
+public class Add extends ElementWiseOperation<Add> {
 
     public Add(Node... subChilds) {
         super(NodeCount.UNLIMITED, NodeCount.UNLIMITED);
@@ -14,24 +15,12 @@ public class Add extends Node<Add> {
         }
     }
 
-    @Override
-    protected Dimension selfCalcOutputDim() throws BuildException {
-        if(!sameDimension(getPreviousNodes().toArray(new Node[]{}))){
-            throw new BuildException(this, "Only accepting inputs with same dimension");
-        }
-        return new Dimension(getPreviousNode().getOutputDimension());
-    }
-
-    @Override
-    protected void selfInit() {
-
-    }
 
     @Override
     public void calc() {
         outputValue.reset(0);
         for(int i = 0; i < getPreviousNodes().size(); i++){
-            outputDerivative[i].reset(1);
+            functionDerivative[i].reset(1);
         }
         for(Node n:getPreviousNodes()){
             outputValue.self_add(n.getOutputValue());

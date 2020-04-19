@@ -3,9 +3,10 @@ package algebra.nodes.basic;
 import algebra.nodes.Dimension;
 import algebra.nodes.Node;
 import algebra.nodes.NodeCount;
+import algebra.nodes.functions.ElementWiseOperation;
 import neuralnetwork.builder.BuildException;
 
-public class ExpPow extends Node<ExpPow> {
+public class ExpPow extends ElementWiseOperation<ExpPow> {
 
     public ExpPow(Node base, Node power){
         super(NodeCount.TWO, NodeCount.UNLIMITED);
@@ -27,8 +28,8 @@ public class ExpPow extends Node<ExpPow> {
         for (int n = 0; n < outputValue.size(); n++) {
             double fpg = Math.pow(getInputValue(0).getData()[n], getInputValue(1).getData()[n]);
             outputValue.getData()[n] = fpg;
-            getOutputDerivative(0).getData()[n] = fpg * getInputValue(1).getData()[n] / getInputValue(0).getData()[n];
-            getOutputDerivative(1).getData()[n] = fpg * Math.log(getInputValue(0).getData()[n]);
+            getFunctionDerivative(0).getData()[n] = fpg * getInputValue(1).getData()[n] / getInputValue(0).getData()[n];
+            getFunctionDerivative(1).getData()[n] = fpg * Math.log(getInputValue(0).getData()[n]);
         }
     }
 
@@ -36,7 +37,7 @@ public class ExpPow extends Node<ExpPow> {
     public void autoDiff() {
         for(int inp = 0; inp < getPreviousNodes().size(); inp++){
             for(int i = 0; i < this.outputGradient.size(); i++){
-                getInputGradient(inp).getData()[i] += outputGradient.getData()[i] * outputDerivative[inp].getData()[i];
+                getInputGradient(inp).getData()[i] += outputGradient.getData()[i] * functionDerivative[inp].getData()[i];
             }
         }
     }
