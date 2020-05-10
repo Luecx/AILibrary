@@ -1,10 +1,11 @@
 package newalgebra.network.optimiser;
 
-import newalgebra.Output;
+import newalgebra.cells.Output;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class SGD extends Optimiser{
+public class SGD extends Optimiser implements Serializable {
 
     private double learningRate;
 

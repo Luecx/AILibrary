@@ -1,10 +1,10 @@
 package newalgebra.element_operators.functions;
 
-import newalgebra.Cell;
-import newalgebra.Output;
-import newalgebra.element_operators.ElementOperator;
+import newalgebra.cells.Cell;
 
-public class TanH extends ElementFunction {
+import java.io.Serializable;
+
+public class TanH extends ElementFunction<TanH> implements Serializable {
 
     public TanH() {
     }

@@ -1,13 +1,12 @@
-package newalgebra;
+package newalgebra.cells;
 
 import core.tensor.Tensor;
-import core.tensor.Tensor3D;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class Output {
+public class Output implements Serializable {
 
     private Tensor value;
     private Tensor gradient;
@@ -34,7 +33,7 @@ public class Output {
 
     public void setValue(final Tensor value) {
         if(!Dimension.fromTensor(value).equals(this.getDimension())){
-            throw new RuntimeException("Wrong input dimension: " + this.getDimension() + " =/= " + Dimension.fromTensor(value));
+            throw new RuntimeException("Wrong tensor dimension: " + this.getDimension() + " =/= " + Dimension.fromTensor(value));
         }
         this.value = value;
     }

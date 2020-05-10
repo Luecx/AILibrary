@@ -1,16 +1,17 @@
-package newalgebra.network.feedforward.cells;
+package newalgebra.network.nodes;
 
-import newalgebra.Cell;
-import newalgebra.Dimension;
+import newalgebra.cells.Cell;
+import newalgebra.cells.Dimension;
 import newalgebra.element_operators.Add;
 import newalgebra.element_operators.functions.Pass;
 import newalgebra.matrix_operators.MatrixVectorProduct;
-import newalgebra.network.Weight;
-import newalgebra.network.recurrent.LSTM;
-import newalgebra.network.rng.RNG;
-import newalgebra.network.rng.Uniform;
+import newalgebra.network.weights.Weight;
+import newalgebra.network.weights.rng.RNG;
+import newalgebra.network.weights.rng.Uniform;
 
-public class Dense extends Cell {
+import java.io.Serializable;
+
+public class Dense extends Node<Dense> implements Serializable {
 
     private Weight weights;
     private Weight bias;
@@ -24,7 +25,24 @@ public class Dense extends Cell {
     private RNG rng = null;
     private int nodeCount;
 
+    public Dense(int nodeCount, Weight weights, Weight bias) {
+        super();
+
+        this.nodeCount = nodeCount;
+
+        this.weights = weights;
+        this.bias = bias;
+
+        this.x = new Pass();
+        this.matmul = new MatrixVectorProduct(weights, 0,x,0);
+        this.add = new Add(matmul, 0,0,bias,0,1);
+
+        this.wrap(this.x, this.weights, this.bias, this.matmul, this.add);
+    }
+
     public Dense(int nodeCount) {
+        super();
+
         this.nodeCount = nodeCount;
 
         this.weights = new Weight();
@@ -36,7 +54,6 @@ public class Dense extends Cell {
 
         this.wrap(this.x, this.weights, this.bias, this.matmul, this.add);
     }
-
 
     @Override
     public void generateInternalVariableDimension() {
@@ -53,6 +70,22 @@ public class Dense extends Cell {
         rng.apply(this.bias.getValue());
     }
 
+    @Override
+    public Dense copy(boolean keepVariables) {
+        if(keepVariables){
+            Dense d = new Dense(nodeCount, this.weights, this.bias);
+            if(this.hasBeenBuilt()){
+                d.setBuilt(true);
+            }
+            return d;
+        }else{
+            return new Dense(nodeCount);
+        }
+    }
+
+
+
+
     public Dense setWeightRNG(RNG rng){
         this.rng = rng;
         return this;
@@ -61,7 +94,6 @@ public class Dense extends Cell {
     public int getInputHeight() {
         return getInput(0).getDimension().getHeight();
     }
-
 
     public Weight getWeights(){
         return weights;

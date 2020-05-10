@@ -163,15 +163,18 @@ public class Builder {
     public static void main(String[] args) throws InterruptedException {
         TrainSet trainSet = TrainSet.fromMnist("res/train-images.idx3-ubyte", "res/train-labels.idx1-ubyte", 0,100);
 
-        Builder builder = new Builder(1,28,28);
-        builder.addNode(new FlattenNode());
+        Builder builder = new Builder(1,1,12*64);
         builder.addNode(new DenseNode(50).setActivationFunction(new Sigmoid()));
-        builder.addNode(new DenseNode(10).setActivationFunction(new Sigmoid()));
+        builder.addNode(new DenseNode(30).setActivationFunction(new Sigmoid()));
+        builder.addNode(new DenseNode(1).setActivationFunction(new Sigmoid()));
         builder.addNode(new OutputNode());
 
         Network network = builder.build_network();
-        network.train(trainSet, 100, 0.03);
+        network.print_overview();
+        network.print_timecheck(1000);
 
-        System.out.println("accuracy: " + Measure.classificationAccuracy(network, trainSet));
+        //network.train(trainSet, 100, 0.03);
+
+        //System.out.println("accuracy: " + Measure.classificationAccuracy(network, trainSet));
     }
 }

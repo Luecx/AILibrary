@@ -1,21 +1,21 @@
-package newalgebra.network.recurrent;
+package newalgebra.network.nodes.recurrent;
 
 import core.tensor.Tensor;
-import newalgebra.*;
+import newalgebra.cells.*;
 import newalgebra.element_operators.Add;
 import newalgebra.element_operators.Mul;
 import newalgebra.element_operators.functions.Pass;
 import newalgebra.element_operators.functions.Sigmoid;
 import newalgebra.element_operators.functions.TanH;
 import newalgebra.matrix_operators.MatrixVectorProduct;
-import newalgebra.network.Weight;
-import newalgebra.network.rng.RNG;
-import newalgebra.network.rng.Uniform;
+import newalgebra.network.nodes.Dense;
+import newalgebra.network.weights.Weight;
+import newalgebra.network.weights.rng.RNG;
+import newalgebra.network.weights.rng.Uniform;
 
-import java.util.Arrays;
-import java.util.List;
+import java.io.Serializable;
 
-public class LSTM extends Cell {
+public class LSTM extends Cell<LSTM> implements Serializable {
 
     
     
@@ -67,6 +67,9 @@ public class LSTM extends Cell {
     private TanH ct_act;
     private Pass ct_out;
     private Mul ht;
+    private Pass out;
+    private Pass ht_out;
+
 
 
 
@@ -76,6 +79,73 @@ public class LSTM extends Cell {
     public LSTM setWeightRNG(RNG rng){
         this.rng = rng;
         return this;
+    }
+
+
+    public LSTM(Weight w_f, Weight w_i, Weight w_o, Weight w_c, Weight u_f, Weight u_i, Weight u_o, Weight u_c, Weight b_f, Weight b_i, Weight b_o, Weight b_c) {
+        super(3, 2);
+
+        x_in = new Pass();
+        h_in = new Pass();
+        c_in = new Pass();
+
+        this.w_f = w_f;
+        this.w_i = w_i;
+        this.w_o = w_o;
+        this.w_c = w_c;
+        this.u_f = u_f;
+        this.u_i = u_i;
+        this.u_o = u_o;
+        this.u_c = u_c;
+        this.b_f = b_f;
+        this.b_i = b_i;
+        this.b_o = b_o;
+        this.b_c = b_c;
+
+
+        mf1 = new MatrixVectorProduct(w_f, 0, x_in, 0);
+        mi1 = new MatrixVectorProduct(w_i, 0, x_in, 0);
+        mo1 = new MatrixVectorProduct(w_o, 0, x_in, 0);
+        mc1 = new MatrixVectorProduct(w_c, 0, x_in, 0);
+        mf2 = new MatrixVectorProduct(u_f, 0, h_in, 0);
+        mi2 = new MatrixVectorProduct(u_i, 0, h_in, 0);
+        mo2 = new MatrixVectorProduct(u_o, 0, h_in, 0);
+        mc2 = new MatrixVectorProduct(u_c, 0, h_in, 0);
+        af = new Add(mf1, 0, 0, mf2, 0, 1, b_f, 0, 2);
+        ai = new Add(mi1, 0, 0, mi2, 0, 1, b_i, 0, 2);
+        ao = new Add(mo1, 0, 0, mo2, 0, 1, b_o, 0, 2);
+        ac = new Add(mc1, 0, 0, mc2, 0, 1, b_c, 0, 2);
+        ft = new Sigmoid(af, 0);
+        it = new Sigmoid(ai, 0);
+        ot = new Sigmoid(ao, 0);
+        c_t = new TanH(ac, 0);
+        mct1 = new Mul(ft, 0, 0, c_in, 0, 1);
+        mct2 = new Mul(it, 0, 0, c_t, 0, 1);
+        ct = new Add(mct1, 0, 0, mct2, 0, 1);
+        ct_act = new TanH(ct, 0);
+        ct_out = new Pass(ct_act, 0);
+        ht = new Mul(ot, 0, 0, ct_act, 0, 1);
+
+        out = new Pass(ht, 0);
+        ht_out = new Pass(ht, 0);
+
+        this.wrap(
+                x_in, h_in, c_in,
+                w_f, w_i, w_o, w_c,
+                u_f, u_i, u_o, u_c,
+                b_f, b_i, b_o, b_c,
+                mf1, mi1, mo1, mc1,
+                mf2, mi2, mo2, mc2,
+                af, ai, ao, ac,
+                ft, it, ot, c_t,
+                mct1, mct2,
+                ct, ct_act, ht,ct_out, out, ht_out);
+
+        weights = new Weight[]{
+                w_f, w_i, w_o, w_c,
+                u_f, u_i, u_o, u_c,
+                b_f, b_i, b_o, b_c
+        };
     }
 
     public LSTM() {
@@ -117,6 +187,10 @@ public class LSTM extends Cell {
         ct_act = new TanH(ct, 0);
         ct_out = new Pass(ct_act, 0);
         ht = new Mul(ot, 0, 0, ct_act, 0, 1);
+
+        out = new Pass(ht,0);
+        ht_out = new Pass(ht, 0);
+
         this.wrap(
                   x_in, h_in, c_in,
                   w_f, w_i, w_o, w_c,
@@ -127,7 +201,7 @@ public class LSTM extends Cell {
                   af, ai, ao, ac,
                   ft, it, ot, c_t,
                   mct1, mct2,
-                  ct, ct_act, ht,ct_out);
+                  ct, ct_act, ht,ct_out, out, ht_out);
 
          weights = new Weight[]{
                  w_f, w_i, w_o, w_c,
@@ -135,7 +209,6 @@ public class LSTM extends Cell {
                  b_f, b_i, b_o, b_c
          };
     }
-
 
 
     @Override
@@ -184,6 +257,15 @@ public class LSTM extends Cell {
 
     }
 
+    @Override
+    public LSTM copy(boolean keepVariables) {
+        if(keepVariables){
+            return new LSTM(w_f, w_i, w_o, w_c, u_f, u_i, u_o, u_c, b_f, b_i, b_o, b_c);
+        }else{
+            return new LSTM();
+        }
+    }
+
     public Weight[] getWeights(){
         return weights;
     }
@@ -201,11 +283,15 @@ public class LSTM extends Cell {
     }
 
     public Output getH_out() {
-        return getOutput(0);
+        return getOutput(1);
     }
 
     public Output getC_out() {
-        return getOutput(1);
+        return getOutput(0);
+    }
+
+    public Output getH2_out(){
+            return getOutput(2);
     }
 
 
@@ -213,8 +299,8 @@ public class LSTM extends Cell {
 
 
         Variable x_in = new Variable(new Dimension(1));
-        Variable h_0 = new Variable(new Dimension(1));
-        Variable c_0 = new Variable(new Dimension(1));
+        Variable h_0 = new Variable(new Dimension(4));
+        Variable c_0 = new Variable(new Dimension(4));
 
         LSTM lstm = new LSTM();
 
@@ -228,11 +314,11 @@ public class LSTM extends Cell {
 
 
         x_in.setValue(new Tensor(new double[]{1}));
-        h_0.setValue(new Tensor(new double[]{1}));
-        c_0.setValue(new Tensor(new double[]{1}));
+        h_0.setValue(new Tensor(new double[]{0,0,0,0}));
+        c_0.setValue(new Tensor(new double[]{0,0,0,0}));
 
         total.calc();
-        total.resetGrad();
+        total.resetGrad(true);
 
         lstm.getH_out().getGradient().reset(0);
         lstm.getH_out().getGradient().self_add(lstm.getH_out().getValue());
@@ -240,8 +326,6 @@ public class LSTM extends Cell {
 
 
 
-
-        System.out.println(total.toString(3));
 
 
 

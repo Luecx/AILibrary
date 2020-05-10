@@ -1,14 +1,31 @@
 package newalgebra.network.loss;
 
 import core.tensor.Tensor;
-import newalgebra.Cell;
-import newalgebra.Dimension;
-import newalgebra.Output;
+import newalgebra.builder.Logger;
+import newalgebra.cells.Cell;
+import newalgebra.cells.Dimension;
+import newalgebra.cells.Output;
 
-public abstract class Loss extends Cell {
+import java.io.Serializable;
+
+public abstract class Loss extends Cell implements Serializable {
 
 
-    public abstract void setTarget(Tensor target, int index);
+    protected abstract void addTarget(Tensor target, int index);
+
+    public void setTarget(Tensor target, int index){
+        if(!hasInput(index)){
+            Logger.getLogger().addWarning("Unsafe input at: " +this.getClass().getSimpleName());
+        }
+        if(!Dimension.fromTensor(target).equals(getInput(index).getDimension())){
+            throw new RuntimeException("Cannot set this target value. Dimensions do not match: " + Dimension.fromTensor(target) + " =/= " + getInput(index).getDimension());
+        }
+        addTarget(target, index);
+    }
+
+    public void setTarget(Tensor target){
+        this.setTarget(target);
+    }
 
     public Loss(int inputs) {
         super(inputs, 1);
@@ -16,10 +33,14 @@ public abstract class Loss extends Cell {
 
     @Override
     public void generateOutputDimension() {
-        this.getOutput(0).setDimension(new Dimension(1));
+        this.getOutput().setDimension(new Dimension(1));
+    }
+
+    public Output getOutput(){
+        return getOutput(0);
     }
 
     public double getLoss(){
-        return getOutput(0).getValue().getData()[0];
+        return getOutput().getValue().getData()[0];
     }
 }

@@ -1,10 +1,14 @@
 package newalgebra.element_operators;
 
-import newalgebra.Output;
+import newalgebra.cells.Output;
 
-import java.util.Arrays;
+import java.io.Serializable;
 
-public class Mul extends ElementOperator {
+public class Mul extends ElementOperator<Mul> implements Serializable {
+
+    public Mul() {
+        this(0);
+    }
 
     public Mul(int inputs) {
         super(inputs);
@@ -32,7 +36,15 @@ public class Mul extends ElementOperator {
 
         for(int i = 0; i < inputCount(); i++){
             for(int v = 0; v < getOutput().getDimension().size(); v++){
-                getFunctionDerivative()[i].getData()[v] = o.getValue().getData()[v] / getInput(i).getValue().getData()[v];
+                if(getInput(i).getValue().getData()[v] == 0){
+                    double der = 1;
+                    for(int k = 0; k < inputCount(); k++){
+                        if(k == i) continue;
+                        der *= getInput(k).getValue().getData()[v];
+                    }
+                }else{
+                    getFunctionDerivative()[i].getData()[v] = o.getValue().getData()[v] / getInput(i).getValue().getData()[v];
+                }
             }
         }
     }

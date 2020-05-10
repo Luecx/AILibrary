@@ -1,11 +1,16 @@
 package newalgebra.element_operators.functions;
 
-import newalgebra.Cell;
-import newalgebra.Input;
-import newalgebra.Output;
+import newalgebra.cells.Cell;
+import newalgebra.cells.Input;
+import newalgebra.cells.Output;
 import newalgebra.element_operators.ElementOperator;
 
-public abstract class ElementFunction extends ElementOperator {
+import java.io.Serializable;
+
+public abstract class ElementFunction<T extends ElementFunction<T>> extends ElementOperator<T> implements Serializable {
+
+
+
 
     public ElementFunction() {
         super(1);
@@ -39,6 +44,11 @@ public abstract class ElementFunction extends ElementOperator {
             o.getValue().getData()[c] = apply(in);
         }
 
+    }
+
+    @Override
+    public boolean inputCountOK() {
+        return this.inputCount() == 1;
     }
 
     protected abstract double apply(double x);

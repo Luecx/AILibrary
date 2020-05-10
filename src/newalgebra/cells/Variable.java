@@ -1,12 +1,19 @@
-package newalgebra;
+package newalgebra.cells;
 
 import core.tensor.Tensor;
 
-public class Variable extends Cell {
+import java.io.Serializable;
+
+public class Variable extends Cell implements Serializable {
 
     public Variable(Dimension dimension) {
         super(0, 1);
         this.getOutput(0).setDimension(new Dimension(dimension));
+    }
+
+    @Override
+    public boolean inputCountOK() {
+        return this.inputCount() == 0;
     }
 
     public Variable() {

@@ -1,8 +1,10 @@
-package newalgebra;
+package newalgebra.cells;
 
 import core.tensor.Tensor;
 
-public class Input {
+import java.io.Serializable;
+
+public class Input implements Serializable {
 
     private Output output;
 

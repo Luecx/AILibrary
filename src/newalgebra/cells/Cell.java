@@ -1,18 +1,40 @@
-package newalgebra;
+package newalgebra.cells;
 
 import core.tensor.Tensor;
 import core.tensor.Tensor2D;
+import newalgebra.builder.CellBuilder;
+import newalgebra.builder.Logger;
+import newalgebra.element_operators.Add;
+import newalgebra.element_operators.functions.LeakyReLU;
+import newalgebra.element_operators.functions.Sigmoid;
+import newalgebra.gla.GLA;
 import newalgebra.matrix_operators.MatrixVectorProduct;
+import newalgebra.network.Network;
+import newalgebra.network.loss.MSE;
+import newalgebra.network.nodes.Dense;
+import newalgebra.network.nodes.Flatten;
+import newalgebra.network.nodes.recurrent.LSTM;
+import newalgebra.network.optimiser.Adam;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.List;
 
-public class Cell {
+public class Cell<T extends Cell<T>> implements Serializable {
 
 
     private List<Input> inputs;
     private List<Output> outputs;
 
     private ArrayList<Cell> computationOrder;
+
+    protected boolean build = false;
 
 
     public Cell(int inputs, int outputs){
@@ -61,7 +83,7 @@ public class Cell {
     }
 
     public final void wrap(Cell... cells){
-        if(!isEnclosed(cells)) throw new RuntimeException("Cells are not enclosed");
+        if(!isEnclosed(cells)) Logger.getLogger().addWarning("Cells are not enclosed!");
         if(!this.computationOrder.isEmpty()) throw new RuntimeException("This cell already contains cells");
         if(!this.getConnectedInputs().isEmpty()) throw new RuntimeException("This cell has connected inputs");
         if(!this.getConnectedOutputs().isEmpty()) throw new RuntimeException("This cell has connected outputs");
@@ -77,35 +99,28 @@ public class Cell {
         }
     }
 
-    /**
-     * task is to take the inputs and calculate the outputs
-     */
-    public void calc(){
-        for(Cell c:computationOrder){
-            c.calc();
-        }
-    }
-
-    /**
-     * calculates partial gradients of the input and adds them
-     */
-    public void autoDiff() {
-        for(int i = computationOrder.size()-1; i>= 0; i--){
-            computationOrder.get(i).autoDiff();
-        }
-    }
 
 
     /**
      * calculate output dimensions
      */
     public final void build(){
-        if(getUnconnectedInputs().size() > 0){
-            throw new RuntimeException("Unconnected inputs");
+
+        if(hasBeenBuilt()){
+            return;
         }
+
+        if(!inputCountOK()){
+            throw new RuntimeException("Input count incorrect at: " + this);
+        }
+
+        if(getUnconnectedInputs().size() > 0){
+            throw new RuntimeException("Unconnected inputs at: " + this);
+        }
+
         for(Input i:inputs){
             if(i.getDimension() == null){
-                throw new RuntimeException("Cannot build when input has no dimension");
+                throw new RuntimeException("Cannot build when input has no dimension at: " + this);
             }
         }
 
@@ -127,7 +142,103 @@ public class Cell {
             o.initArrays();
         }
         initArrays();
+        build = true;
     }
+
+    /**
+     * task is to take the inputs and calculate the outputs
+     */
+    public void calc(){
+        for(Cell c:computationOrder){
+            c.calc();
+        }
+    }
+
+    /**
+     * calculates partial gradients of the input and adds them
+     */
+    public void autoDiff() {
+        for(int i = computationOrder.size()-1; i>= 0; i--){
+            computationOrder.get(i).autoDiff();
+        }
+    }
+
+    /**
+     * returns true if this node has been built
+     */
+    public boolean hasBeenBuilt(){
+        return build;
+    }
+
+    /**
+     * sets the build state
+     * @param hasBeenBuilt
+     */
+    public void setBuilt(boolean hasBeenBuilt){
+        this.build = hasBeenBuilt;
+    }
+
+    /**
+     * @param keepVariables     set to true if variable cells should not be copied but used for both instances
+     * @return
+     */
+    public T copy(boolean keepVariables){
+        //TODO implement by subchilds
+        try {
+            T _this = (T) this.getClass().getConstructor(null).newInstance();
+
+            for(Cell<?> k:computationOrder){
+                Cell<?> cop = k.copy(keepVariables);
+                _this.getComputationOrder().add(cop);
+            }
+
+            for(Cell<?> k:_this.getComputationOrder()){
+
+                for(int inputIndex = 0; inputIndex < k.inputCount(); inputIndex++){
+                    Input i = k.getInput(inputIndex);
+                    if(i.getOutput() == null) break;
+
+                    int cellIndex = -1;
+                    int outputIndex = -1;
+
+
+                    outer:
+                    for(int cI = 0; cI < computationOrder.size(); cI++){
+                        for(int oI = 0; oI < computationOrder.get(cI).outputCount(); oI++){
+                            if(computationOrder.get(cI).getOutput(oI) == i.getOutput()){
+                                cellIndex = cI;
+                                outputIndex = oI;
+                                break outer;
+                            }
+                        }
+                    }
+
+                    if(cellIndex != -1 && outputIndex != -1){
+                        Cell.connectCells(k, k.getComputationOrder().get(cellIndex), outputIndex, inputIndex);
+                    }
+
+                }
+
+            }
+
+            return _this;
+
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
+
+    /**
+     * checks if the input count is OK.
+     * It should check for the amount of inputs is correct
+     * @return
+     */
+    public boolean inputCountOK(){
+        //TODO implement by subchilds
+        return true;
+    }
+
     /**
      * can be used to calculate internal variable dimensions
      */
@@ -380,15 +491,18 @@ public class Cell {
     /**
      * resets the gradients
      */
-    public final void resetGrad(){
+    public final void resetGrad(boolean resetVariables){
 
+        if(!resetVariables && this instanceof Variable){
+            return;
+        }
         if(this.computationOrder.isEmpty()){
             for(Output o:outputs){
                 o.getGradient().reset(0);
             }
         }else{
             for(Cell c:this.computationOrder){
-                c.resetGrad();
+                c.resetGrad(resetVariables);
             }
         }
     }
@@ -400,7 +514,7 @@ public class Cell {
      *
      * @return
      */
-    public String toString(int mode) {
+    public final String toString(int mode) {
         StringBuilder builder = new StringBuilder();
         this.toString(0,mode,builder);
         return builder.toString();
@@ -411,10 +525,18 @@ public class Cell {
      * returns a string representation
      * @return
      */
-    public String toString(){
+    public final String toString(){
         StringBuilder builder = new StringBuilder();
         this.toString(0,1,builder);
         return builder.toString();
+    }
+
+    /**
+     * returns the computation order
+     * @return
+     * */
+    public ArrayList<Cell> getComputationOrder() {
+        return new ArrayList<>(computationOrder);
     }
 
     /**
@@ -427,7 +549,7 @@ public class Cell {
      * @param spaces
      * @return
      */
-    public void toString(int spaces, int mode, StringBuilder builder){
+    public final void toString(int spaces, int mode, StringBuilder builder){
 
         String lead = "|\t".repeat(spaces);
 
@@ -496,6 +618,30 @@ public class Cell {
 
     }
 
+
+    /**
+     * connects the first n i/o of both cells where n = min(c1.unconnectedOutputs, c2.unconnectedInputs)
+     * @param c1
+     * @param c2
+     */
+    public final static void connectCellsComplete(Cell c1, Cell c2){
+        while(!c1.getConnectedOutputs().isEmpty() && !c2.getUnconnectedInputs().isEmpty()){
+            connectCellsNext(c1,c2);
+        }
+    }
+
+    /**
+     * connects the next free i/o of both cells
+     * @param c1
+     * @param c2
+     */
+    public final static void connectCellsNext(Cell c1, Cell c2){
+        if(c2.getUnconnectedInputs().size() == 0 && c2.canAddInputs()){
+            c2.createInput();
+        }
+        connectCells(c1,c2,c1.getOutputs().indexOf(c1.getUnconnectedOutputs().get(0)), c2.getInputs().indexOf(c2.getUnconnectedInputs().get(0)));
+    }
+
     /**
      * connects 2 cells and links their first output/input respectively
      * @param c1
@@ -539,6 +685,13 @@ public class Cell {
         c1.getOutput(output).addConnectedInput(c2.getInput(input));
     }
 
+    public final static void connectIO(Output o, Input i){
+        if(o.isConnectedTo(i)) {
+            throw new RuntimeException("They are already connected");
+        }
+        o.addConnectedInput(i);
+    }
+
     /**
      * checks if the given cells are only connected with each other and no connection is missing
      * @param cells
@@ -572,46 +725,75 @@ public class Cell {
 
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
-        Variable mat = new Variable(new Dimension(2,2));
-        Variable vec = new Variable(new Dimension(2));
+//        Variable mat = new Variable(new Dimension(2,2));
+//        Variable vec = new Variable(new Dimension(2));
+//
+//        MatrixVectorProduct mul = new MatrixVectorProduct(mat,0,vec,0);
+//
+//
+//
+//        Cell full = new Cell(mat, vec, mul);
+//        full.build();
+//
+//        System.out.println(full);
+//        Tensor2D matrix = new Tensor2D(new double[][]{{1,2},{3,4}});
+//        Tensor   vector = new Tensor  (new double[]   {1,2});
+//
+//
+//
+//        for(int i = 0; i < 100; i++){
+//
+//            mat.setValue(matrix);
+//            vec.setValue(vector);
+//
+//            full.calc();
+//            Tensor out = full.getOutput(0).getValue();
+//            System.out.println(out);
+//
+//            full.resetGrad(true);
+//            full.getOutput(0).getGradient().reset(0);
+//            full.getOutput(0).getGradient().self_add(full.getOutput(0).getValue());
+//            full.autoDiff();
+//            System.out.println(mat.getGradient());
+//
+//            Tensor matGradient = mat.getGradient();
+//
+//            matrix.self_sub(matGradient.scale(0.1));
+//        }
+//
 
-        MatrixVectorProduct mul = new MatrixVectorProduct(mat,0,vec,0);
 
-
-
-        Cell full = new Cell(mat, vec, mul);
-        full.build();
-
-        System.out.println(full);
-        Tensor2D matrix = new Tensor2D(new double[][]{{1,2},{3,4}});
-        Tensor   vector = new Tensor  (new double[]   {1,2});
-
-
-
-        for(int i = 0; i < 100; i++){
-
-            mat.setValue(matrix);
-            vec.setValue(vector);
-
-            full.calc();
-            Tensor out = full.getOutput(0).getValue();
-            System.out.println(out);
-
-            full.resetGrad();
-            full.getOutput(0).getGradient().reset(0);
-            full.getOutput(0).getGradient().self_add(full.getOutput(0).getValue());
-            full.autoDiff();
-            System.out.println(mat.getGradient());
-
-            Tensor matGradient = mat.getGradient();
-
-            matrix.self_sub(matGradient.scale(0.1));
-        }
-
-
-
+//        final CellBuilder builder = new CellBuilder();
+//        builder.add(new Variable(new Dimension(2,3,3)));
+//        builder.add(new Flatten());
+//        builder.add(new Dense(250));
+//        builder.add(new LeakyReLU());
+//        builder.add(new Dense(50));
+//        builder.add(new LeakyReLU());
+//        builder.add(new Dense(25));
+//        builder.add(new LeakyReLU());
+//        for(int i = 0; i < 10; i++){
+//            builder.add(new Dense(25));
+//            builder.add(new LeakyReLU());
+//        }
+//
+//        builder.add(new Dense(2));
+//
+//        final Cell cell = builder.build();
+//
+//
+//        Network network = network = new Network(cell, new MSE(), new Adam());
+//
+//        final BufferedImage img = new BufferedImage(3000, 3000, 1);
+//        final Graphics2D g2d = img.createGraphics();
+//        final GLA gla = new GLA();
+//        gla.drawGraph(g2d, cell, true);
+//        ImageIO.write(img, "PNG", new File("test.png"));
+        LSTM d = new LSTM();
+        System.out.println(d);
+        System.out.println(d.copy(true));
     }
 
 }

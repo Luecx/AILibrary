@@ -1,12 +1,16 @@
 package newalgebra.matrix_operators;
 
-import newalgebra.Cell;
-import newalgebra.Dimension;
-import newalgebra.Input;
-import newalgebra.Output;
+import newalgebra.cells.Cell;
+import newalgebra.cells.Dimension;
+import newalgebra.cells.Input;
+import newalgebra.cells.Output;
+
+import java.io.Serializable;
 
 
-public class MatrixVectorProduct extends Cell {
+public class MatrixVectorProduct extends Cell<MatrixVectorProduct> implements Serializable {
+
+
 
     public MatrixVectorProduct() {
         super(2, 1);
@@ -47,8 +51,14 @@ public class MatrixVectorProduct extends Cell {
                 vecDiff += mat.getOutput().getValue().get(i,n) * getOutput().getGradient().get(i);
             }
 
+
             vec.getGradient().add(vecDiff, n);
         }
+    }
+
+    @Override
+    public boolean inputCountOK() {
+        return inputCount() == 2;
     }
 
     @Override

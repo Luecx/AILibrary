@@ -1,24 +1,28 @@
 package newalgebra.element_operators;
 
 import core.tensor.Tensor;
-import neuralnetwork.nodes.Node;
-import newalgebra.Cell;
-import newalgebra.Dimension;
-import newalgebra.Input;
-import newalgebra.Output;
+import newalgebra.cells.Cell;
+import newalgebra.cells.Dimension;
+import newalgebra.cells.Input;
+import newalgebra.cells.Output;
+import newalgebra.element_operators.functions.ElementFunction;
+
+import java.io.Serializable;
 
 /**
  * A node that requires all inputs to have the same size and each operation is done element wise.
  * This allows for the usage of easy derivatives.
  * No childs should exist for this type of cell
  */
-public class ElementOperator extends Cell {
+public class ElementOperator<T extends ElementOperator<T>> extends Cell<T> implements Serializable {
 
 
     /**
      * derivative of output with respect to each input
      */
     protected Tensor[] functionDerivative;
+
+    public ElementOperator() {this(0);}
 
     public ElementOperator(int inputs) {
         super(inputs, 1);

@@ -1,10 +1,10 @@
 package newalgebra.element_operators.functions;
 
-import newalgebra.Cell;
-import newalgebra.Output;
-import newalgebra.element_operators.ElementOperator;
+import newalgebra.cells.Cell;
 
-public class Pass extends ElementFunction {
+import java.io.Serializable;
+
+public class Pass extends ElementFunction<Pass> implements Serializable {
 
     public Pass() {
     }

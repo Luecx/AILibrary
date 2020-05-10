@@ -1,9 +1,15 @@
 package newalgebra.element_operators;
 
-import newalgebra.Cell;
-import newalgebra.Output;
+import newalgebra.cells.Output;
 
-public class Add extends ElementOperator {
+import java.io.Serializable;
+
+public class Add extends ElementOperator<Add> implements Serializable {
+
+
+    public Add() {
+        this(0);
+    }
 
     public Add(int inputs) {
         super(inputs);

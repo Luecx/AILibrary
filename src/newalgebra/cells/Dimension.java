@@ -1,14 +1,14 @@
-package newalgebra;
+package newalgebra.cells;
 
 import core.tensor.Tensor;
 import core.tensor.Tensor2D;
 import core.tensor.Tensor3D;
 import core.tensor.Tensor4D;
 
-import java.util.Arrays;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Dimension {
+public class Dimension implements Serializable {
 
     private int depth = 0, width = 0, height = 1, trength = 0;
 
@@ -44,7 +44,7 @@ public class Dimension {
     }
 
     public int getDepth() {
-        return depth;
+        return Math.max(1,depth);
     }
 
     public void setDepth(int depth) {
@@ -52,7 +52,7 @@ public class Dimension {
     }
 
     public int getWidth() {
-        return width;
+        return Math.max(1,width);
     }
 
     public void setWidth(int width) {
@@ -60,7 +60,7 @@ public class Dimension {
     }
 
     public int getHeight() {
-        return height;
+        return Math.max(1,height);
     }
 
     public void setHeight(int height) {
@@ -68,7 +68,7 @@ public class Dimension {
     }
 
     public int getTrength() {
-        return trength;
+        return Math.max(1,trength);
     }
 
     public void setTrength(int trength) {

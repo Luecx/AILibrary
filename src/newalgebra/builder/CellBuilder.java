@@ -1,22 +1,21 @@
 package newalgebra.builder;
 
 import core.tensor.Tensor;
-import newalgebra.*;
+import newalgebra.cells.*;
 import newalgebra.element_operators.functions.Sigmoid;
-import newalgebra.network.feedforward.Network;
-import newalgebra.network.feedforward.cells.Dense;
-import newalgebra.network.loss.Loss;
+import newalgebra.network.Network;
+import newalgebra.network.nodes.Dense;
 import newalgebra.network.loss.MSE;
+import newalgebra.network.nodes.Flatten;
 import newalgebra.network.optimiser.Adam;
-import newalgebra.network.optimiser.Optimiser;
-import newalgebra.network.optimiser.SGD;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-public class CellBuilder {
+public class CellBuilder implements Serializable {
 
 
     private HashMap<String, Cell> addedCells = new HashMap<>();
@@ -151,9 +150,12 @@ public class CellBuilder {
             inOutMapping.get(i).addConnectedInput(i);
         }
 
-
         addedCells.put(name, cell);
         calcOrder.add(cell);
+
+        if(!cell.inputCountOK()){
+            throw new RuntimeException();
+        }
 
     }
 
@@ -186,40 +188,38 @@ public class CellBuilder {
 
     public static void main(String[] args) {
 
-
-        Dense d1;
-
-        CellBuilder builder = new CellBuilder();
-        builder.add(new Variable(new Dimension(10)), "inp");
-        builder.add(new Dense(10));
-        builder.add(new Sigmoid());
-        builder.add(new Dense(10));
+        final CellBuilder builder = new CellBuilder();
+        builder.add(new Flatten());
         builder.add(new Sigmoid());
 
-        Cell total = builder.build();
+        final Cell cell = builder.build();
+
+        Network network = new Network(cell, new MSE(), new Adam());
+
+        System.out.println(cell);
 
 
-        Network network = new Network(total, new MSE(), new SGD(0.001));
 
-        //System.out.println(network);
 
-        Tensor in = new Tensor(10);
+        Tensor in = new Tensor(3,3,3);
+
         in.randomizeRegular(0,1);
 
-        Tensor out = new Tensor(10);
+        Tensor out = new Tensor(27);
         out.randomizeRegular(0,1);
 
+        network.train(new Tensor[]{in}, new Tensor[]{out});
+        network.train(new Tensor[]{in}, new Tensor[]{out});
 
-        double minE = 3E-4;
+//        // Liki Relu
+//        builder.addNode(new OutputNode());
 
-        int iteration = 0;
-        double loss;
-        while((loss = network.train(new Tensor[]{in}, new Tensor[]{out})) > minE){
-            iteration++;
-            System.out.println(iteration + " " + loss);
-        }
-        System.out.println(iteration);
-
+//        final TrainSet set = Main.loadTrainSet();
+//        for (int i = 0; i < 100; i++) {
+//            for (int a = 0; a < set.size(); a++)
+//                Main.network.train(new Tensor3D[] { set.getInput(a) }, new Tensor3D[] { set.getOutput(a) });
+//            set.shuffle();
+//        }
 
     }
 

@@ -1,8 +1,10 @@
 package newalgebra.element_operators.functions;
 
-import newalgebra.Cell;
+import newalgebra.cells.Cell;
 
-public class Sigmoid extends ElementFunction {
+import java.io.Serializable;
+
+public class Sigmoid extends ElementFunction<Sigmoid> implements Serializable {
 
     public Sigmoid() {
     }

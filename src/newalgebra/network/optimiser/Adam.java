@@ -1,10 +1,11 @@
 package newalgebra.network.optimiser;
 
-import newalgebra.Output;
+import newalgebra.cells.Output;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Adam extends Optimiser{
+public class Adam extends Optimiser implements Serializable {
 
     private double alpha=0.001, beta_1=0.9, beta_2=0.999, epsilon = 1E-8;
 

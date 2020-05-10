@@ -1,18 +1,18 @@
-package newalgebra.network.feedforward;
+package newalgebra.network;
 
 import core.tensor.Tensor;
-import newalgebra.Cell;
-import newalgebra.Input;
-import newalgebra.Output;
-import newalgebra.Variable;
-import newalgebra.network.Weight;
+import newalgebra.cells.Cell;
+import newalgebra.cells.Output;
+import newalgebra.cells.Variable;
+import newalgebra.network.weights.Weight;
 import newalgebra.network.loss.Loss;
 import newalgebra.network.optimiser.Optimiser;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Network {
+public class Network implements Serializable {
 
     private List<Variable> variables = new ArrayList<>();
 
@@ -34,8 +34,6 @@ public class Network {
         if(this.loss.outputCount() != 1) throw new RuntimeException();
 
 
-
-
         List<Cell> allCells = cell.listAllChildsDeep();
 
         if(!Cell.isEnclosed(allCells.toArray(new Cell[0]))){
@@ -43,7 +41,7 @@ public class Network {
         }
 
         int outputIndex = 0;
-        for(Cell c:allCells){
+        for(Cell<?> c:allCells){
             if(c instanceof Variable){
                 if(c instanceof Weight){
                     weights.add(((Weight) c).getOutput());
@@ -58,20 +56,16 @@ public class Network {
             }
         }
 
-        if(loss.getOutput(0).getValue() == null){
-            loss.build();
+        if(this.cell.getOutput(0).getValue() == null){
+            this.cell.build();
+        }
+        if(this.loss.getOutput(0).getValue() == null){
+            this.loss.build();
         }
 
         optimiser.prepare(weights);
     }
 
-
-
-    public Tensor[] calc(Tensor... in){
-        setInputs(in);
-        cell.calc();
-        return getOutputs();
-    }
 
     public void setInputs(Tensor... in){
         for(int i = 0; i < Math.min(in.length, variables.size()); i++){
@@ -94,17 +88,27 @@ public class Network {
     }
 
     public void backprop(){
-        loss.resetGrad();
-        cell.resetGrad();
+        loss.resetGrad(true);
+        cell.resetGrad(true);
 
         loss.getOutput(0).getGradient().getData()[0] = 1;
         loss.autoDiff();
         cell.autoDiff();
     }
 
+
+
+    public Tensor[] calc(Tensor... in){
+        setInputs(in);
+        cell.calc();
+        return getOutputs();
+    }
+
     public double train(Tensor[] in, Tensor[] out){
+
         calc(in);
         setTargets(out);
+
         loss.calc();
         backprop();
 
@@ -113,8 +117,37 @@ public class Network {
         return loss.getLoss();
     }
 
+    public double train(Tensor in, Tensor out){
+
+        calc(in);
+        setTargets(out);
+
+        loss.calc();
+        backprop();
+
+        optimiser.update();
+
+        return loss.getLoss();
+    }
+
+    public Cell getCell() {
+        return cell;
+    }
+
+    public Loss getLoss() {
+        return loss;
+    }
+
+    public Optimiser getOptimiser() {
+        return optimiser;
+    }
+
     public List<Variable> getVariables() {
         return variables;
+    }
+
+    public List<Output> getWeights() {
+        return weights;
     }
 
     @Override

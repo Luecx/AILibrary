@@ -1,10 +1,10 @@
 package newalgebra.network.loss;
 
 import core.tensor.Tensor;
-import newalgebra.Cell;
-import newalgebra.Output;
 
-public class MSE extends Loss{
+import java.io.Serializable;
+
+public class MSE extends Loss implements Serializable {
 
     Tensor target;
 
@@ -13,14 +13,18 @@ public class MSE extends Loss{
     }
 
     @Override
-    public void setTarget(Tensor target, int index) {
+    public boolean inputCountOK() {
+        return inputCount() == 1;
+    }
+
+    @Override
+    protected void addTarget(Tensor target, int index) {
         this.target = target;
     }
 
     @Override
     public void calc() {
         double loss = 0;
-
 
         for(int i = 0; i < getInput(0).getOutput().getValue().size(); i++){
             loss += 0.5 *

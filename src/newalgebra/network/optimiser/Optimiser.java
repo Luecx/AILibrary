@@ -1,12 +1,11 @@
 package newalgebra.network.optimiser;
 
-import newalgebra.Output;
-import newalgebra.Variable;
-import newalgebra.network.Weight;
+import newalgebra.cells.Output;
 
+import java.io.Serializable;
 import java.util.List;
 
-public abstract class Optimiser {
+public abstract class Optimiser implements Serializable {
 
     public abstract void prepare(List<Output> valuesToOptimise);
 
