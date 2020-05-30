@@ -2,6 +2,7 @@ package newalgebra.network;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import core.tensor.Tensor;
@@ -161,6 +162,18 @@ public class GAN implements Serializable {
         advOptimiser.update();
         
         return l;
+	}
+	public double errorAdvGivenGen(Tensor... inputs) {
+		
+		calcGenerative(inputs);
+		giveGenToAdv();
+		adv.calc();
+
+		loss.setTarget(ONE, 0); //set it to FOUND ai, and train the adversarial
+		
+		loss.calc();
+		
+        return loss.getLoss();
 	}
 	
 	public double trainAdversarial(Tensor... inputs) {
