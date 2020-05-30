@@ -1,9 +1,10 @@
-package newalgebra.network.rng;
+package newalgebra.network.weights.rng;
 
 import core.tensor.Tensor;
-import core.tensor.Tensor2D;
 
-public abstract class RNG {
+import java.io.Serializable;
+
+public abstract class RNG implements Serializable {
 
     private long seed;
 

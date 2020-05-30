@@ -298,31 +298,31 @@ public class LSTM extends Cell<LSTM> implements Serializable {
     public static void main(String[] args) {
 
 
-        Variable x_in = new Variable(new Dimension(1));
-        Variable h_0 = new Variable(new Dimension(4));
-        Variable c_0 = new Variable(new Dimension(4));
 
-        LSTM lstm = new LSTM();
+        Dense lstm = new Dense(10);
 
-        Cell.connectCells(x_in, lstm, 0);
-        Cell.connectCells(h_0, lstm, 1);
-        Cell.connectCells(c_0, lstm, 2);
+        System.out.println(lstm);
+        System.out.println(lstm.copy(true));
 
-
-        Cell total = new Cell(x_in, h_0, c_0, lstm);
-        total.build();
-
-
-        x_in.setValue(new Tensor(new double[]{1}));
-        h_0.setValue(new Tensor(new double[]{0,0,0,0}));
-        c_0.setValue(new Tensor(new double[]{0,0,0,0}));
-
-        total.calc();
-        total.resetGrad(true);
-
-        lstm.getH_out().getGradient().reset(0);
-        lstm.getH_out().getGradient().self_add(lstm.getH_out().getValue());
-        total.autoDiff();
+//        Cell.connectCells(x_in, lstm, 0);
+//        Cell.connectCells(h_0, lstm, 1);
+//        Cell.connectCells(c_0, lstm, 2);
+//
+//
+//        Cell total = new Cell(x_in, h_0, c_0, lstm);
+//        total.build();
+//
+//
+//        x_in.setValue(new Tensor(new double[]{1}));
+//        h_0.setValue(new Tensor(new double[]{0,0,0,0}));
+//        c_0.setValue(new Tensor(new double[]{0,0,0,0}));
+//
+//        total.calc();
+//        total.resetGrad(true);
+//
+//        lstm.getH_out().getGradient().reset(0);
+//        lstm.getH_out().getGradient().self_add(lstm.getH_out().getValue());
+//        total.autoDiff();
 
 
 

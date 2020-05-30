@@ -21,37 +21,51 @@ public class MatrixVectorProduct extends Cell<MatrixVectorProduct> implements Se
     }
 
 
+    boolean loopInputFirst = false;
+
+    public MatrixVectorProduct setLoopInputFirst(boolean loopInputFirst) {
+        this.loopInputFirst = loopInputFirst;
+        return this;
+    }
+
     @Override
     public void calc() {
         Input mat = getMat();
         Input vec = getVec();
 
-
-        for(int i = 0; i < this.getOutput().getDimension().getHeight(); i++){
-            double s = 0;
+        if(loopInputFirst){
             for(int n = 0; n < mat.getDimension().getWidth(); n++){
-                s += mat.getValue().get(i,n) * vec.getValue().get(n);
+                if(vec.getValue().get(n) == 0){
+                    continue;
+                }
+                for(int i = 0; i < this.getOutput().getDimension().getHeight(); i++){
+                    double s = mat.getValue().get(i,n) * vec.getValue().get(n);
+                    getOutput().getValue().add(s, i);
+                }
             }
-            getOutput().getValue().set(s, i);
+        }else{
+            for(int i = 0; i < this.getOutput().getDimension().getHeight(); i++){
+                double s = 0;
+                for(int n = 0; n < mat.getDimension().getWidth(); n++){
+                    s += mat.getValue().get(i,n) * vec.getValue().get(n);
+                }
+                getOutput().getValue().set(s, i);
+            }
         }
+
+
     }
 
     @Override
     public void autoDiff() {
         Input mat = getMat();
         Input vec = getVec();
-
-        for(int n = 0; n < mat.getDimension().getWidth(); n++){
-
+        for (int n = 0; n < mat.getDimension().getWidth(); n++) {
             double vecDiff = 0;
-
-            for(int i = 0; i < mat.getDimension().getHeight(); i++){
-                mat.getGradient().add(getOutput().getGradient().get(i) * vec.getOutput().getValue().get(n), i,n);
-
-                vecDiff += mat.getOutput().getValue().get(i,n) * getOutput().getGradient().get(i);
+            for (int i = 0; i < mat.getDimension().getHeight(); i++) {
+                mat.getGradient().add(getOutput().getGradient().get(i) * vec.getOutput().getValue().get(n), i, n);
+                vecDiff += mat.getOutput().getValue().get(i, n) * getOutput().getGradient().get(i);
             }
-
-
             vec.getGradient().add(vecDiff, n);
         }
     }
@@ -86,8 +100,11 @@ public class MatrixVectorProduct extends Cell<MatrixVectorProduct> implements Se
         this.getOutput().setDimension(new Dimension(mat.getDimension().getHeight()));
     }
 
-
-//    @Override
+    @Override
+    public MatrixVectorProduct copy(boolean keepVariables) {
+        return new MatrixVectorProduct().setLoopInputFirst(loopInputFirst);
+    }
+    //    @Override
 //    protected void selfInit() {
 //
 //    }

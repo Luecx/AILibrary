@@ -70,6 +70,11 @@ public class Dense extends Node<Dense> implements Serializable {
         rng.apply(this.bias.getValue());
     }
 
+    public Dense loopInputFirst() {
+        this.matmul.setLoopInputFirst(true);
+        return this;
+    }
+
     @Override
     public Dense copy(boolean keepVariables) {
         if(keepVariables){

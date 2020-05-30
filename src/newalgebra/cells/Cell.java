@@ -765,35 +765,42 @@ public class Cell<T extends Cell<T>> implements Serializable {
 //
 
 
-//        final CellBuilder builder = new CellBuilder();
-//        builder.add(new Variable(new Dimension(2,3,3)));
-//        builder.add(new Flatten());
-//        builder.add(new Dense(250));
-//        builder.add(new LeakyReLU());
-//        builder.add(new Dense(50));
-//        builder.add(new LeakyReLU());
-//        builder.add(new Dense(25));
-//        builder.add(new LeakyReLU());
+        final CellBuilder builder = new CellBuilder();
+        builder.add(new Variable(new Dimension(2,3,3)));
+        builder.add(new Flatten());
+        builder.add(new Dense(250).loopInputFirst());
+        builder.add(new LeakyReLU());
+        builder.add(new Dense(50));
+        builder.add(new LeakyReLU());
+        builder.add(new Dense(25));
+        builder.add(new LeakyReLU());
 //        for(int i = 0; i < 10; i++){
 //            builder.add(new Dense(25));
 //            builder.add(new LeakyReLU());
 //        }
-//
-//        builder.add(new Dense(2));
-//
-//        final Cell cell = builder.build();
-//
-//
-//        Network network = network = new Network(cell, new MSE(), new Adam());
-//
+
+        builder.add(new Dense(2));
+
+        final Cell cell = builder.build();
+
+
+        Network network = network = new Network(cell, new MSE(), new Adam());
+
+        Tensor in = new Tensor(2,3,3);
+        in.set(1,0,0,0);
+
+        long t = System.currentTimeMillis();
+
+        for(int i = 0; i < 10000; i++)
+            network.calc(in);
+        System.out.println(System.currentTimeMillis()-t);
+
+        //
 //        final BufferedImage img = new BufferedImage(3000, 3000, 1);
 //        final Graphics2D g2d = img.createGraphics();
 //        final GLA gla = new GLA();
 //        gla.drawGraph(g2d, cell, true);
 //        ImageIO.write(img, "PNG", new File("test.png"));
-        LSTM d = new LSTM();
-        System.out.println(d);
-        System.out.println(d.copy(true));
     }
 
 }

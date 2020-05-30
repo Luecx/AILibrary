@@ -1,8 +1,9 @@
-package newalgebra.network.rng;
+package newalgebra.network.weights.rng;
 
+import java.io.Serializable;
 import java.util.Random;
 
-public class Uniform extends RNG{
+public class Uniform extends RNG implements Serializable {
 
     double min;
     double max;

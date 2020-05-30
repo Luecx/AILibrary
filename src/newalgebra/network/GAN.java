@@ -2,7 +2,6 @@ package newalgebra.network;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import core.tensor.Tensor;
